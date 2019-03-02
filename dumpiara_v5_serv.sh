@@ -29,6 +29,7 @@ for p in system vendor modem; do
         rm -rf $p\_
 done
 #copy file names
+sudo chown $(whoami) * -R ; chmod -R u+rwX * #ensure final permissions
 find system/ -type f -exec echo {} >> allfiles.txt \;
 find vendor/ -type f -exec echo {} >> allfiles.txt \;
 find bootimg/ -type f -exec echo {} >> allfiles.txt \;
@@ -36,7 +37,6 @@ find modem/ -type f -exec echo {} >> allfiles.txt \;
 sort allfiles.txt > all_files.txt
 rm allfiles.txt
 rm *.dat *.list *.br system.img vendor.img #remove all compressed files
-sudo chown $(whoami) * -R ; chmod -R u+rwX * #ensure final permissions
 
 fingerprint=$(grep -oP "(?<=^ro.build.fingerprint=).*" -hs system/build.prop system/system/build.prop)
 brand=$(echo $fingerprint | cut -d / -f1  | tr '[:upper:]' '[:lower:]')
