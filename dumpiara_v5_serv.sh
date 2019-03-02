@@ -22,7 +22,7 @@ git clone -q https://github.com/xiaolu/mkbootimg_tools
 ./mkbootimg_tools/mkboot ./boot.img ./bootimg > /dev/null #extract boot
 echo 'boot extracted'
 for p in system vendor modem; do
-        cp -r $p\_ $p/ #copy images
+        sudo cp -r $p\_ $p/ #copy images
         echo $p 'copied'
         sudo umount $p\_ #unmount
         rm -rf $p\_
