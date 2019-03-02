@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 URL=$1
 GIT_OAUTH_TOKEN=$2
-axel -a -n32 ${URL:?} #download rom
+axel -a -n64 ${URL:?} #download rom
 FILE=${URL##*/}
 UNZIP_DIR=${FILE/.zip/}
 unzip -q ${FILE} -d ${UNZIP_DIR} || unzip -q *.zip -d ${UNZIP_DIR} #extract
