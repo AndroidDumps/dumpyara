@@ -14,6 +14,7 @@ for p in system vendor; do
     echo $p 'extracted'
     sudo mount -t ext4 -o loop $p.img $p\_ #mount imgs
     sudo chown $(whoami) $p\_/ -R
+    sudo chmod -R u+rwX $p\_/
 done
 mkdir modem_
 sudo mount -t vfat -o loop firmware-update/NON-HLOS.bin modem_/ || sudo mount -t vfat -o loop firmware-update/modem.img modem_/ ||
@@ -35,8 +36,7 @@ find modem/ -type f -exec echo {} >> allfiles.txt \;
 sort allfiles.txt > all_files.txt
 rm allfiles.txt
 rm *.dat *.list *.br system.img vendor.img #remove all compressed files
-sudo find -type d -exec chmod ugoa=rwx {} + #deal with permission struggles
-sudo find -type d -exec chmod ugoa=rwx {} + #twice, because I don't trust it
+sudo chown $(whoami) * -R ; chmod -R u+rwX * #ensure final permissions
 
 fingerprint=$(grep -oP "(?<=^ro.build.fingerprint=).*" -hs system/build.prop system/system/build.prop)
 brand=$(echo $fingerprint | cut -d / -f1  | tr '[:upper:]' '[:lower:]')
