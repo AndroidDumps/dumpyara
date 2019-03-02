@@ -35,8 +35,8 @@ find modem/ -type f -exec echo {} >> allfiles.txt \;
 sort allfiles.txt > all_files.txt
 rm allfiles.txt
 rm *.dat *.list *.br system.img vendor.img #remove all compressed files
-sudo find -type d -exec chmod a=rwx {} + #deal with permission struggles
-sudo find -type d -exec chmod a=rwx {} + #twice, because I don't trust it
+sudo find -type d -exec chmod ugoa=rwx {} + #deal with permission struggles
+sudo find -type d -exec chmod ugoa=rwx {} + #twice, because I don't trust it
 
 fingerprint=$(grep -oP "(?<=^ro.build.fingerprint=).*" -hs system/build.prop system/system/build.prop)
 brand=$(echo $fingerprint | cut -d / -f1  | tr '[:upper:]' '[:lower:]')
