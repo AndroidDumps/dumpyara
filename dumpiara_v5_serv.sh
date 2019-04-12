@@ -8,12 +8,12 @@ unzip -q ${FILE} -d ${UNZIP_DIR} || unzip -q *.zip -d ${UNZIP_DIR} #extract
 cd ${UNZIP_DIR} || exit
 rm -f ../${FILE} #remove rom file
 for p in system vendor cust; do
-    brotli -d $p.new.dat.br; #extract br
+    brotli -d $p.new.dat.br &>/dev/null ; #extract br
     cat $p.new.dat.{0..999} 2>/dev/null >> $p.new.dat #merge split Vivo(?) sdat
     ../sdat2img.py $p.{transfer.list,new.dat,img} > /dev/null #convert sdat to img
     mkdir $p\_ || rm -rf $p/*
     echo $p 'extracted'
-    sudo mount -t ext4 -o loop $p.img $p\_ #mount imgs
+    sudo mount -t ext4 -o loop $p.img $p\_ &>/dev/null #mount imgs
     sudo chown $(whoami) $p\_/ -R
     sudo chmod -R u+rwX $p\_/
 done
@@ -25,7 +25,7 @@ git clone -q https://github.com/xiaolu/mkbootimg_tools
 echo 'boot extracted'
 for p in system vendor modem; do
         sudo cp -r $p\_ $p/ #copy images
-        echo $p 'copied'
+        echo $p 'copied (if exists)'
         sudo umount $p\_ #unmount
         rm -rf $p\_
 done
@@ -35,9 +35,10 @@ find system/ -type f -exec echo {} >> allfiles.txt \;
 find vendor/ -type f -exec echo {} >> allfiles.txt \;
 find bootimg/ -type f -exec echo {} >> allfiles.txt \;
 find modem/ -type f -exec echo {} >> allfiles.txt \;
+find cust/ -type f -exec echo {} >> allfiles.txt \;
 sort allfiles.txt > all_files.txt
 rm allfiles.txt
-rm *.dat *.list *.br system.img vendor.img #remove all compressed files
+rm *.dat *.list *.br system.img vendor.img 2>/dev/null #remove all compressed files
 
 fingerprint=$(grep -oP "(?<=^ro.build.fingerprint=).*" -hs system/build.prop system/system/build.prop)
 brand=$(echo $fingerprint | cut -d / -f1  | tr '[:upper:]' '[:lower:]')
