@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 GIT_OAUTH_TOKEN=$1
 cd ..
-for p in system vendor; do
+for p in system vendor cust; do
     brotli -d $p.new.dat.br; #extract br
-    ./dumpyara/sdat2img.py $p.{transfer.list,new.dat,img} > /dev/null #convert sdat to img
+    cat $p.new.dat.{0..999} 2>/dev/null >> $p.new.dat #merge split Vivo(?) sdat
+    ../sdat2img.py $p.{transfer.list,new.dat,img} > /dev/null #convert sdat to img
     mkdir $p\_ || rm -rf $p/*
     echo $p 'extracted'
     sudo mount -t ext4 -o loop $p.img $p\_ #mount imgs
