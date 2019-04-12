@@ -23,9 +23,9 @@ sudo mount -t vfat -o loop NON-HLOS.bin modem_/ || sudo mount -t vfat -o loop mo
 git clone -q https://github.com/xiaolu/mkbootimg_tools
 ./mkbootimg_tools/mkboot ./boot.img ./bootimg > /dev/null #extract boot
 echo 'boot extracted'
-for p in system vendor modem; do
+for p in system vendor modem cust; do
         sudo cp -r $p\_ $p/ #copy images
-        echo $p 'copied (if exists)'
+        echo $p 'copied'
         sudo umount $p\_ #unmount
         rm -rf $p\_
 done
