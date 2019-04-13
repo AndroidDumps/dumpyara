@@ -7,7 +7,7 @@ UNZIP_DIR=${FILE/.zip/}
 unzip -q ${FILE} -d ${UNZIP_DIR} || unzip -q *.zip -d ${UNZIP_DIR} #extract
 cd ${UNZIP_DIR} || exit
 rm -f ../${FILE} #remove rom file
-for p in system vendor cust; do
+for p in system vendor cust odm oem; do
     brotli -d $p.new.dat.br &>/dev/null ; #extract br
     cat $p.new.dat.{0..999} 2>/dev/null >> $p.new.dat #merge split Vivo(?) sdat
     ../sdat2img.py $p.{transfer.list,new.dat,img} &>/dev/null #convert sdat to img
@@ -23,10 +23,10 @@ sudo mount -t vfat -o loop NON-HLOS.bin modem_/ || sudo mount -t vfat -o loop mo
 git clone -q https://github.com/xiaolu/mkbootimg_tools
 ./mkbootimg_tools/mkboot ./boot.img ./bootimg > /dev/null #extract boot
 echo 'boot extracted'
-for p in system vendor modem cust; do
+for p in system vendor modem cust odm oem; do
         sudo cp -r $p\_ $p/ #copy images
         echo $p 'copied'
-        sudo umount $p\_ #unmount
+        sudo umount $p\_ &>/dev/null #unmount
         rm -rf $p\_
 done
 #copy file names
@@ -36,6 +36,8 @@ find vendor/ -type f -exec echo {} >> allfiles.txt \;
 find bootimg/ -type f -exec echo {} >> allfiles.txt \;
 find modem/ -type f -exec echo {} >> allfiles.txt \;
 find cust/ -type f -exec echo {} >> allfiles.txt \;
+find odm/ -type f -exec echo {} >> allfiles.txt \;
+find oem/ -type f -exec echo {} >> allfiles.txt \;
 sort allfiles.txt > all_files.txt
 rm allfiles.txt
 rm *.dat *.list *.br system.img vendor.img 2>/dev/null #remove all compressed files
