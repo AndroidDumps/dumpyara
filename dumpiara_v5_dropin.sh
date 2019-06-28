@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 GIT_OAUTH_TOKEN=$1
+ORG=AndroidDumps #for org support, here can you write your org name
 cd ..
 for p in system vendor cust odm oem; do
     brotli -d $p.new.dat.br &>/dev/null ; #extract br
@@ -50,21 +51,21 @@ find -size +97M -printf '%P\n' -o -name *sensetime* -printf '%P\n' -o -name *.li
 git add --all
 git reset mkbootimg_tools/ META-INF/ file_contexts.bin dumpyara/
 
-curl https://api.github.com/user/repos\?access_token=$GIT_OAUTH_TOKEN -d '{"name":"'${repo,,}'"}' > /dev/null #create new repo
-git remote add origin https://github.com/$user/${repo,,}.git
+curl -s -X POST -H "Authorization: token ${GIT_OAUTH_TOKEN}" -d '{ "name": "'"$repo"'" }' "https://api.github.com/orgs/${ORG}/repos" #Create new repo
+git remote add origin https://github.com/$ORG/${repo,,}.git
 git -c "user.name=Tadi" -c "user.email=TadiT7@github.com" commit -asm "Add ${description}"
-git push https://$GIT_OAUTH_TOKEN@github.com/$user/${repo,,}.git $branch ||
+git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ||
 
 (git update-ref -d HEAD ; git reset system/ vendor/ ;
 git checkout -b $branch ;
 git -c "user.name=Tadi" -c "user.email=TadiT7@github.com" commit -asm "Add extras for ${description}" ;
-git push https://$GIT_OAUTH_TOKEN@github.com/$user/${repo,,}.git $branch ;
+git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;
 git add vendor/ ;
 git -c "user.name=Tadi" -c "user.email=TadiT7@github.com" commit -asm "Add vendor for ${description}" ;
-git push https://$GIT_OAUTH_TOKEN@github.com/$user/${repo,,}.git $branch ;
+git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;
 git add system/system/app/ system/system/priv-app/ || git add system/app/ system/priv-app/ ;
 git -c "user.name=Tadi" -c "user.email=TadiT7@github.com" commit -asm "Add apps for ${description}" ;
-git push https://$GIT_OAUTH_TOKEN@github.com/$user/${repo,,}.git $branch ;
+git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;
 git add system/ ;
 git -c "user.name=Tadi" -c "user.email=TadiT7@github.com" commit -asm "Add system for ${description}" ;
-git push https://$GIT_OAUTH_TOKEN@github.com/$user/${repo,,}.git $branch ;)
+git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;)
