@@ -7,6 +7,7 @@ FILE=${URL##*/}
 UNZIP_DIR=${FILE/.zip/}
 unzip -q ${FILE} -d ${UNZIP_DIR} || unzip -q *.zip -d ${UNZIP_DIR} #extract
 cd ${UNZIP_DIR} || exit
+ls system.* || { echo "No supported system images were found!" && exit ;}
 rm -f ../${FILE} #remove rom file
 for p in system vendor cust odm oem; do
     brotli -d $p.new.dat.br &>/dev/null ; #extract br
@@ -43,6 +44,7 @@ sort allfiles.txt > all_files.txt
 rm allfiles.txt
 rm *.dat *.list *.br system.img vendor.img 2>/dev/null #remove all compressed files
 
+ls system/build.prop 2>/dev/null || ls system/system/build.prop 2>/dev/null || { echo "No system build.prop found, pushing cancelled!" && exit ;}
 fingerprint=$(grep -oP "(?<=^ro.build.fingerprint=).*" -hs system/build.prop system/system/build.prop)
 brand=$(echo $fingerprint | cut -d / -f1  | tr '[:upper:]' '[:lower:]')
 codename=$(echo $fingerprint | cut -d / -f3 | cut -d : -f1  | tr '[:upper:]' '[:lower:]')
