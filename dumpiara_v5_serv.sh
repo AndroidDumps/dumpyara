@@ -7,7 +7,7 @@ FILE=${URL##*/}
 UNZIP_DIR=${FILE/.zip/}
 unzip -q ${FILE} -d ${UNZIP_DIR} || unzip -q *.zip -d ${UNZIP_DIR} #extract
 cd ${UNZIP_DIR} || exit
-ls system.* || { echo "No supported system images were found!" && exit ;}
+ls system.* 1>/dev/null || { echo "No supported system images were found!" && exit ;}
 rm -f ../${FILE} #remove rom file
 for p in system vendor cust odm oem; do
     brotli -d $p.new.dat.br &>/dev/null ; #extract br
