@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-GIT_OAUTH_TOKEN=$1
+if [[ -n $1 ]]; then
+    GIT_OAUTH_TOKEN=$1
+elif [[ -f ".githubtoken" ]]; then
+    GIT_OAUTH_TOKEN=$(cat .githubtoken)
+else
+    echo "Please provide github oauth token as a parameter or place it in a file called .githubtoken in the root of this repo"
+    exit 1
+fi
 ORG=AndroidDumps #for org support, here can you write your org name
 cd ..
 for p in system vendor cust odm oem; do

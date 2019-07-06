@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 URL=$1
-GIT_OAUTH_TOKEN=$2
+if [[ -n $2 ]]; then
+    GIT_OAUTH_TOKEN=$2
+elif [[ -f ".githubtoken" ]]; then
+    GIT_OAUTH_TOKEN=$(cat .githubtoken)
+else
+    echo "Please provide github oauth token as a parameter or place it in a file called .githubtoken in the root of this repo"
+    exit 1
+fi
 ORG=AndroidDumps #for orgs support, here can write your org name
 axel -a -n64 ${URL:?} #download rom
 FILE=${URL##*/}
