@@ -31,7 +31,6 @@ else
     fi
 
     if [[ -f "payload.bin" ]]; then
-        sendTG "payload detected"
         if [[ ! -d "${HOME}/extract_android_ota_payload" ]]; then
             cd
             git clone https://github.com/cyxx/extract_android_ota_payload
