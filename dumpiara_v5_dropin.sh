@@ -47,6 +47,8 @@ repo=$(echo $brand\_$codename\_dump)
 
 user=TadiT7 #set user for github
 git init
+git config user.name Tadi
+git config user.email TadiT7@github.com
 git checkout -b $branch
 find -size +97M -printf '%P\n' -o -name *sensetime* -printf '%P\n' -o -name *.lic -printf '%P\n' > .gitignore
 git add --all
@@ -54,19 +56,19 @@ git reset mkbootimg_tools/ META-INF/ file_contexts.bin dumpyara/
 
 curl -s -X POST -H "Authorization: token ${GIT_OAUTH_TOKEN}" -d '{ "name": "'"$repo"'" }' "https://api.github.com/orgs/${ORG}/repos" #Create new repo
 git remote add origin https://github.com/$ORG/${repo,,}.git
-git -c "user.name=Tadi" -c "user.email=TadiT7@github.com" commit -asm "Add ${description}"
+git commit -asm "Add ${description}"
 git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ||
 
 (git update-ref -d HEAD ; git reset system/ vendor/ ;
 git checkout -b $branch ;
-git -c "user.name=Tadi" -c "user.email=TadiT7@github.com" commit -asm "Add extras for ${description}" ;
+git commit -asm "Add extras for ${description}" ;
 git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;
 git add vendor/ ;
-git -c "user.name=Tadi" -c "user.email=TadiT7@github.com" commit -asm "Add vendor for ${description}" ;
+git commit -asm "Add vendor for ${description}" ;
 git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;
 git add system/system/app/ system/system/priv-app/ || git add system/app/ system/priv-app/ ;
-git -c "user.name=Tadi" -c "user.email=TadiT7@github.com" commit -asm "Add apps for ${description}" ;
+git commit -asm "Add apps for ${description}" ;
 git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;
 git add system/ ;
-git -c "user.name=Tadi" -c "user.email=TadiT7@github.com" commit -asm "Add system for ${description}" ;
+git commit -asm "Add system for ${description}" ;
 git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;)
