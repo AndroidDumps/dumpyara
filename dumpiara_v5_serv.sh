@@ -11,11 +11,37 @@ fi
 ORG=AndroidDumps #for orgs support, here can write your org name
 axel -a -n64 ${URL:?} #download rom
 FILE=${URL##*/}
-UNZIP_DIR=${FILE/.zip/}
-unzip -q ${FILE} -d ${UNZIP_DIR} || unzip -q *.zip -d ${UNZIP_DIR} #extract
-cd ${UNZIP_DIR} || exit
-ls system.* 1>/dev/null || { echo "No supported system images were found!" && exit ;}
-rm -f ../${FILE} #remove rom file
+EXTENSION=${URL##*.}
+UNZIP_DIR=${FILE/.$EXTENSION/}
+
+if [[ "${EXTENSION}" == "tgz" ]]; then
+    tar xf ${FILE}
+    cd */images
+else
+    if [[ -f "${FILE}" ]]; then
+        7z e ${FILE} -o${UNZIP_DIR}
+    else
+        7z e * -o${UNZIP_DIR}
+    fi
+
+    cd ${UNZIP_DIR} || exit
+    files=$(ls *.zip)
+    if [[ -f "${files}" ]] && [[ $(echo ${files} | wc -l) -eq 1 ]] && [[ "${files}" != "compatibility.zip" ]]; then
+        unzip ${files}
+    fi
+
+    if [[ -f "payload.bin" ]]; then
+        sendTG "payload detected"
+        if [[ ! -d "${HOME}/extract_android_ota_payload" ]]; then
+            cd
+            git clone https://github.com/cyxx/extract_android_ota_payload
+            cd -
+        fi
+        python2 ~/extract_android_ota_payload/extract_android_ota_payload.py payload.bin
+    fi
+fi
+
+rm -fv $OLDPWD/*.zip
 for p in system vendor cust odm oem; do
     brotli -d $p.new.dat.br &>/dev/null ; #extract br
     cat $p.new.dat.{0..999} 2>/dev/null >> $p.new.dat #merge split Vivo(?) sdat
@@ -26,11 +52,19 @@ for p in system vendor cust odm oem; do
     sudo chown $(whoami) $p\_/ -R
     sudo chmod -R u+rwX $p\_/
 done
+
 mkdir modem_
-sudo mount -t vfat -o loop firmware-update/NON-HLOS.bin modem_/ || sudo mount -t vfat -o loop firmware-update/modem.img modem_/ ||
-sudo mount -t vfat -o loop NON-HLOS.bin modem_/ || sudo mount -t vfat -o loop modem.img modem_/ #extract modem
-git clone -q https://github.com/xiaolu/mkbootimg_tools
-./mkbootimg_tools/mkboot ./boot.img ./bootimg > /dev/null #extract boot
+for modem in {firmware-update/,}{modem.img,NON-HLOS.bin}; do
+    sudo mount -t vfat -o loop $modem modem_/ && break
+done
+
+if [[ ! -d "${HOME}/extract-dtb" ]]; then
+    cd
+    git clone https://github.com/PabloCastellano/extract-dtb
+    cd -
+fi
+python3 ~/extract-dtb/extract-dtb.py ./boot.img -o ./bootimg > /dev/null # Extract boot
+python3 ~/extract-dtb/extract-dtb.py ./dtbo.img -o ./dtbo > /dev/null # Extract dtbo
 echo 'boot extracted'
 for p in system vendor modem cust odm oem; do
         sudo cp -r $p\_ $p/ #copy images
@@ -38,11 +72,13 @@ for p in system vendor modem cust odm oem; do
         sudo umount $p\_ &>/dev/null #unmount
         rm -rf $p\_
 done
+
 #copy file names
 sudo chown $(whoami) * -R ; chmod -R u+rwX * #ensure final permissions
 find system/ -type f -exec echo {} >> allfiles.txt \;
 find vendor/ -type f -exec echo {} >> allfiles.txt \;
 find bootimg/ -type f -exec echo {} >> allfiles.txt \;
+find dtbo/ -type f -exec echo {} >> allfiles.txt \;
 find modem/ -type f -exec echo {} >> allfiles.txt \;
 find cust/ -type f -exec echo {} >> allfiles.txt \;
 find odm/ -type f -exec echo {} >> allfiles.txt \;
