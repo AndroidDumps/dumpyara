@@ -18,6 +18,9 @@ Usage when in already extracted archive:
 `bash dumpiara_v5_dropin.sh yourGithubToken`
 
 
+You can also place your oauth token in a file called `.githubtoken` in the root of this repository, if you wish
+It is ignored by git
+
 
 Before you start, make sure that dumpyara scripts are mapped to your own account and nick, otherwise you'll only dump, not push.
 
