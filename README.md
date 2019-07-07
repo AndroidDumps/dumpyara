@@ -5,6 +5,8 @@
       Linux (preferably Ubuntu-based, but Debian is ok)
       Brotli
       Axel
+      7zip
+      Protobuf
 
 Usage:
 `bash dumpiara_v5_serv.sh "OTAlink" yourGithubToken`
