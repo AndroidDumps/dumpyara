@@ -87,10 +87,34 @@ rm allfiles.txt
 rm *.dat *.list *.br system.img vendor.img 2>/dev/null #remove all compressed files
 
 ls system/build.prop 2>/dev/null || ls system/system/build.prop 2>/dev/null || { echo "No system build.prop found, pushing cancelled!" && exit ;}
-fingerprint=$(grep -oP "(?<=^ro.build.fingerprint=).*" -hs system/build.prop system/system/build.prop)
+
+flavor=$(grep -oP "(?<=^ro.build.flavor=).*" -hs {system,system/system,vendor}/build.prop)
+[[ -z "${flavor}" ]] && flavor=$(grep -oP "(?<=^ro.vendor.build.flavor=).*" -hs vendor/build.prop)
+[[ -z "${flavor}" ]] && flavor=$(grep -oP "(?<=^ro.system.build.flavor=).*" -hs {system,system/system}/build.prop)
+release=$(grep -oP "(?<=^ro.build.version.release=).*" -hs {system,system/system,vendor}/build.prop)
+[[ -z "${release}" ]] && release=$(grep -oP "(?<=^ro.vendor.build.version.release=).*" -hs vendor/build.prop)
+[[ -z "${release}" ]] && release=$(grep -oP "(?<=^ro.system.build.version.release=).*" -hs {system,system/system}/build.prop)
+id=$(grep -oP "(?<=^ro.build.id=).*" -hs {system,system/system,vendor}/build.prop)
+[[ -z "${id}" ]] && id=$(grep -oP "(?<=^ro.vendor.build.id=).*" -hs vendor/build.prop)
+[[ -z "${id}" ]] && id=$(grep -oP "(?<=^ro.system.build.id=).*" -hs {system,system/system}/build.prop)
+incremental=$(grep -oP "(?<=^ro.build.version.incremental=).*" -hs {system,system/system,vendor}/build.prop)
+[[ -z "${incremental}" ]] && incremental=$(grep -oP "(?<=^ro.vendor.build.version.incremental=).*" -hs vendor/build.prop)
+[[ -z "${incremental}" ]] && incremental=$(grep -oP "(?<=^ro.system.build.version.incremental=).*" -hs {system,system/system}/build.prop)
+tags=$(grep -oP "(?<=^ro.build.tags=).*" -hs {system,system/system,vendor}/build.prop)
+[[ -z "${tags}" ]] && tags=$(grep -oP "(?<=^ro.vendor.build.tags=).*" -hs vendor/build.prop)
+[[ -z "${tags}" ]] && tags=$(grep -oP "(?<=^ro.system.build.tags=).*" -hs {system,system/system}/build.prop)
+fingerprint=$(grep -oP "(?<=^ro.build.fingerprint=).*" -hs {system,system/system,vendor}/build.prop)
+[[ -z "${fingerprint}" ]] && fingerprint=$(grep -oP "(?<=^ro.vendor.build.fingerprint=).*" -hs vendor/build.prop)
+[[ -z "${fingerprint}" ]] && fingerprint=$(grep -oP "(?<=^ro.system.build.fingerprint=).*" -hs {system,system/system}/build.prop)
 brand=$(echo $fingerprint | cut -d / -f1  | tr '[:upper:]' '[:lower:]')
-codename=$(echo $fingerprint | cut -d / -f3 | cut -d : -f1  | tr '[:upper:]' '[:lower:]')
-description=$(grep -oP "(?<=^ro.build.description=).*" -hs system/build.prop system/system/build.prop)
+codename=$(grep -oP "(?<=^ro.product.device=).*" -hs {system,system/system,vendor}/build.prop)
+[[ -z "${codename}" ]] && codename=$(grep -oP "(?<=^ro.product.vendor.device=).*" -hs vendor/build.prop)
+[[ -z "${codename}" ]] && codename=$(grep -oP "(?<=^ro.product.system.device=).*" -hs {system,system/system}/build.prop)
+[[ -z "${codename}" ]] && codename=$(echo $fingerprint | cut -d / -f3 | cut -d : -f1  | tr '[:upper:]' '[:lower:]')
+description=$(grep -oP "(?<=^ro.build.description=).*" -hs {system,system/system,vendor}/build.prop)
+[[ -z "${description}" ]] && description=$(grep -oP "(?<=^ro.vendor.build.description=).*" -hs vendor/build.prop)
+[[ -z "${description}" ]] && description=$(grep -oP "(?<=^ro.system.build.description=).*" -hs {system,system/system}/build.prop)
+[[ -z "${description}" ]] && description="$flavor $release $id $incremental $tags"
 branch=$(echo $description | tr ' ' '-')
 repo=$(echo $brand\_$codename\_dump)
 
