@@ -11,7 +11,7 @@
 ***For Firmware Extractor (Part of Dumpyara)***:
 
       apt install liblzma-dev python-pip brotli lz4
-      pip install backports.lzma protobuf
+      pip install backports.lzma protobuf pycrypto
 
 Usage:
 `bash dumpiara_v5_serv.sh "OTAlink" yourGithubToken`

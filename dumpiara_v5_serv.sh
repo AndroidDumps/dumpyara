@@ -16,7 +16,7 @@ UNZIP_DIR=${FILE/.$EXTENSION/}
 PARTITIONS="system vendor cust odm oem modem"
 
 if [ -d "${HOME}/Firmware_extractor" ]; then
-    git -C ~/Firmware_extractor pull
+    git -C ~/Firmware_extractor pull --recurse-submodules
 else
     git clone --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor ~/Firmware_extractor
 fi
@@ -40,7 +40,7 @@ fi
 python3 ~/extract-dtb/extract-dtb.py ./boot.img -o ./bootimg > /dev/null # Extract boot
 python3 ~/extract-dtb/extract-dtb.py ./dtbo.img -o ./dtbo > /dev/null # Extract dtbo
 echo 'boot extracted'
-for p in system vendor modem cust odm oem; do
+for p in $PARTITIONS; do
         sudo cp -r $p\_ $p/ #copy images
         echo $p 'copied'
         sudo umount $p\_ &>/dev/null #unmount
