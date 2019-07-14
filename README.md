@@ -3,10 +3,15 @@
 **Requirements**:
  
       Linux (preferably Ubuntu-based, but Debian is ok)
-      Brotli
       Axel
-      7zip
+      Brotli
       Protobuf
+      7zip
+      
+***For Firmware Extractor (Part of Dumpyara)***:
+
+      apt install liblzma-dev python-pip brotli lz4
+      pip install backports.lzma protobuf
 
 Usage:
 `bash dumpiara_v5_serv.sh "OTAlink" yourGithubToken`
