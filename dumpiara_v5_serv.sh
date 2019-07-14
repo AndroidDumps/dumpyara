@@ -25,12 +25,12 @@ fi
 cd ${UNZIP_DIR}
 
 for p in $PARTITIONS; do
-    mkdir $p\_ || rm -rf $p/*
+    mkdir $p || rm -rf $p/*
     echo $p 'extracted'
-    sudo mount -o loop $p.img $p\_ &>/dev/null #mount imgs
-    sudo chown $(whoami) $p\_/ -R
-    sudo chmod -R u+rwX $p\_/
+    7z x $p.img -y -o$p/ 2>/dev/null >> zip.log
+    rm $p.img 2>/dev/null
 done
+rm zip.log
 
 if [[ ! -d "${HOME}/extract-dtb" ]]; then
     cd
@@ -40,12 +40,6 @@ fi
 python3 ~/extract-dtb/extract-dtb.py ./boot.img -o ./bootimg > /dev/null # Extract boot
 python3 ~/extract-dtb/extract-dtb.py ./dtbo.img -o ./dtbo > /dev/null # Extract dtbo
 echo 'boot extracted'
-for p in $PARTITIONS; do
-        sudo cp -r $p\_ $p/ #copy images
-        echo $p 'copied'
-        sudo umount $p\_ &>/dev/null #unmount
-        rm -rf $p\_
-done
 
 #copy file names
 sudo chown $(whoami) * -R ; chmod -R u+rwX * #ensure final permissions
@@ -59,7 +53,6 @@ find odm/ -type f -exec echo {} >> allfiles.txt \;
 find oem/ -type f -exec echo {} >> allfiles.txt \;
 sort allfiles.txt > all_files.txt
 rm allfiles.txt
-rm *.dat *.list *.br system.img vendor.img 2>/dev/null #remove all compressed files
 
 ls system/build.prop 2>/dev/null || ls system/system/build.prop 2>/dev/null || { echo "No system build.prop found, pushing cancelled!" && exit ;}
 
