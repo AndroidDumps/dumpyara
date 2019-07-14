@@ -13,48 +13,25 @@ axel -a -n64 ${URL:?} #download rom
 FILE=${URL##*/}
 EXTENSION=${URL##*.}
 UNZIP_DIR=${FILE/.$EXTENSION/}
+PARTITIONS="system vendor cust odm oem modem"
 
-if [[ "${EXTENSION}" == "tgz" ]]; then
-    tar xf ${FILE}
-    cd */images
+if [ -d "${HOME}/Firmware_extractor" ]; then
+    cd ~/Firmware_extractor
+    git pull
+    cd -
 else
-    if [[ -f "${FILE}" ]]; then
-        7z e ${FILE} -o${UNZIP_DIR}
-    else
-        7z e * -o${UNZIP_DIR}
-    fi
-
-    cd ${UNZIP_DIR} || exit
-    files=$(ls *.zip)
-    if [[ -f "${files}" ]] && [[ $(echo ${files} | wc -l) -eq 1 ]] && [[ "${files}" != "compatibility.zip" ]]; then
-        unzip ${files}
-    fi
-
-    if [[ -f "payload.bin" ]]; then
-        if [[ ! -d "${HOME}/extract_android_ota_payload" ]]; then
-            cd
-            git clone https://github.com/cyxx/extract_android_ota_payload
-            cd -
-        fi
-        python2 ~/extract_android_ota_payload/extract_android_ota_payload.py payload.bin
-    fi
+    git clone --recurse-submodules https://github.com/erfanoabdi/Firmware_extractor ~/Firmware_extractor
 fi
+~/Firmware_extractor/extractor.sh ${FILE} ${UNZIP_DIR}
 
-rm -fv $OLDPWD/*.zip
-for p in system vendor cust odm oem; do
-    brotli -d $p.new.dat.br &>/dev/null ; #extract br
-    cat $p.new.dat.{0..999} 2>/dev/null >> $p.new.dat #merge split Vivo(?) sdat
-    ../sdat2img.py $p.{transfer.list,new.dat,img} &>/dev/null #convert sdat to img
+cd ${UNZIP_DIR}
+
+for p in $PARTITIONS; do
     mkdir $p\_ || rm -rf $p/*
     echo $p 'extracted'
-    sudo mount -t ext4 -o loop $p.img $p\_ &>/dev/null #mount imgs
+    sudo mount -o loop $p.img $p\_ &>/dev/null #mount imgs
     sudo chown $(whoami) $p\_/ -R
     sudo chmod -R u+rwX $p\_/
-done
-
-mkdir modem_
-for modem in {firmware-update/,}{modem.img,NON-HLOS.bin}; do
-    sudo mount -t vfat -o loop $modem modem_/ && break
 done
 
 if [[ ! -d "${HOME}/extract-dtb" ]]; then
