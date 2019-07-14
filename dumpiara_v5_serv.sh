@@ -16,11 +16,9 @@ UNZIP_DIR=${FILE/.$EXTENSION/}
 PARTITIONS="system vendor cust odm oem modem"
 
 if [ -d "${HOME}/Firmware_extractor" ]; then
-    cd ~/Firmware_extractor
-    git pull
-    cd -
+    git -C ~/Firmware_extractor pull
 else
-    git clone --recurse-submodules https://github.com/erfanoabdi/Firmware_extractor ~/Firmware_extractor
+    git clone --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor ~/Firmware_extractor
 fi
 ~/Firmware_extractor/extractor.sh ${FILE} ${UNZIP_DIR}
 
