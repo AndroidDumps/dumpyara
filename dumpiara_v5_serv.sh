@@ -50,6 +50,14 @@ for dtb_file in $dtb_list; do
 done
 find bootdts/ -name "*.dtb" -exec rename 's/\.dtb$/.dts/' '{}' \;
 
+# board-info.txt
+find . -type f -name "modem.img" -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING=MPSS.AT." | sed "s|QC_IMAGE_VERSION_STRING=MPSS.AT.|require version-baseband=|g" >> board-info.txt
+find . -type f -name "tz.img" -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING" | sed "s|QC_IMAGE_VERSION_STRING|require version-trustzone|g" >> board-info.txt
+if [ -e vendor/build.prop ]; then
+	strings vendor/build.prop | grep "ro.vendor.build.date.utc" | sed "s|ro.vendor.build.date.utc|require version-vendor|g" >> board-info.txt
+fi
+sort -u -o board-info.txt board-info.txt
+
 #copy file names
 sudo chown $(whoami) * -R ; chmod -R u+rwX * #ensure final permissions
 find system/ -type f -exec echo {} >> allfiles.txt \;
