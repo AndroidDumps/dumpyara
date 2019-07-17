@@ -41,6 +41,15 @@ python3 ~/extract-dtb/extract-dtb.py ./boot.img -o ./bootimg > /dev/null # Extra
 python3 ~/extract-dtb/extract-dtb.py ./dtbo.img -o ./dtbo > /dev/null # Extract dtbo
 echo 'boot extracted'
 
+# Extract dts
+mkdir bootdts
+dtb_list=`find bootimg -name '*.dtb' -type f -printf '%P\n' | sort`
+for dtb_file in $dtb_list; do
+	echo -e "Extracting dts from $dtb_file"
+	dtc -I dtb -O dts -o bootdts/$dtb_file bootimg/$dtb_file > /dev/null 2>&1
+done
+find bootdts/ -name "*.dtb" -exec rename 's/\.dtb$/.dts/' '{}' \;
+
 #copy file names
 sudo chown $(whoami) * -R ; chmod -R u+rwX * #ensure final permissions
 find system/ -type f -exec echo {} >> allfiles.txt \;

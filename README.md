@@ -7,6 +7,8 @@
       Brotli
       Protobuf
       7zip
+      device-tree-compiler
+      rename
       
 ***For Firmware Extractor (Part of Dumpyara)***:
 
