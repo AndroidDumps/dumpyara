@@ -15,15 +15,7 @@
       pip install backports.lzma protobuf pycrypto
 
 Usage:
-`bash dumpiara_v5_serv.sh "OTAlink" yourGithubToken`
-
-Usage when in already extracted archive:
-
-`git clone https://github.com/xxx/dumpyara.git`
-
-`cd dumpyara`
-
-`bash dumpiara_v5_dropin.sh yourGithubToken`
+`bash dumpyara.sh "<OTAlink> OR <OTA file path>" yourGithubToken`
 
 
 You can also place your oauth token in a file called `.githubtoken` in the root of this repository, if you wish

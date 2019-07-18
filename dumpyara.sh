@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-URL=$1
+
+PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+# Create input & working directory if it does not exist
+mkdir -p $PROJECT_DIR/input $PROJECT_DIR/working
+
+# GitHub token
 if [[ -n $2 ]]; then
     GIT_OAUTH_TOKEN=$2
 elif [[ -f ".githubtoken" ]]; then
@@ -8,21 +14,49 @@ else
     echo "Please provide github oauth token as a parameter or place it in a file called .githubtoken in the root of this repo"
     exit 1
 fi
+
+# download or copy from local?
+URL=$1
+if echo "$1" | grep "http" ; then
+	cd $PROJECT_DIR/input
+	axel -a -n64 ${URL:?} #download rom
+else
+	cp -a "$1" $PROJECT_DIR/input
+fi
 ORG=AndroidDumps #for orgs support, here can write your org name
-axel -a -n64 ${URL:?} #download rom
 FILE=${URL##*/}
 EXTENSION=${URL##*.}
 UNZIP_DIR=${FILE/.$EXTENSION/}
 PARTITIONS="system vendor cust odm oem modem"
 
-if [ -d "${HOME}/Firmware_extractor" ]; then
-    git -C ~/Firmware_extractor pull --recurse-submodules
+if [ -d "$PROJECT_DIR/Firmware_extractor" ]; then
+    git -C $PROJECT_DIR/Firmware_extractor pull --recurse-submodules
 else
-    git clone --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor ~/Firmware_extractor
+    git clone --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor $PROJECT_DIR/Firmware_extractor
 fi
-~/Firmware_extractor/extractor.sh ${FILE} ${UNZIP_DIR}
+. $PROJECT_DIR/Firmware_extractor/extractor.sh $PROJECT_DIR/input/${FILE} $PROJECT_DIR/working/${UNZIP_DIR}
 
-cd ${UNZIP_DIR}
+cd $PROJECT_DIR/working/${UNZIP_DIR}
+
+if [ ! -d "$PROJECT_DIR/extract-dtb" ]; then
+    git clone https://github.com/PabloCastellano/extract-dtb $PROJECT_DIR/extract-dtb
+fi
+python3 $PROJECT_DIR/extract-dtb/extract-dtb.py $PROJECT_DIR/working/${UNZIP_DIR}/boot.img -o $PROJECT_DIR/working/${UNZIP_DIR}/bootimg > /dev/null # Extract boot
+echo 'boot extracted'
+
+if [[ -f $PROJECT_DIR/working/${UNZIP_DIR}/dtbo.img ]]; then
+    python3 $PROJECT_DIR/extract-dtb/extract-dtb.py $PROJECT_DIR/working/${UNZIP_DIR}/dtbo.img -o $PROJECT_DIR/working/${UNZIP_DIR}/dtbo > /dev/null # Extract dtbo
+    echo 'dtbo extracted'
+fi
+
+# Extract dts
+mkdir $PROJECT_DIR/working/${UNZIP_DIR}/bootdts
+dtb_list=`find $PROJECT_DIR/working/${UNZIP_DIR}/bootimg -name '*.dtb' -type f -printf '%P\n' | sort`
+for dtb_file in $dtb_list; do
+	echo -e "Extracting dts from $dtb_file"
+	dtc -I dtb -O dts -o $PROJECT_DIR/working/${UNZIP_DIR}/bootdts/$dtb_file $PROJECT_DIR/working/${UNZIP_DIR}/bootimg/$dtb_file > /dev/null 2>&1
+	mv $PROJECT_DIR/working/${UNZIP_DIR}/bootdts/$dtb_file $(echo "$PROJECT_DIR/working/${UNZIP_DIR}/bootdts/$dtb_file" | sed -r 's|.dtb|.dts|g')
+done
 
 for p in $PARTITIONS; do
     mkdir $p || rm -rf $p/*
@@ -32,47 +66,17 @@ for p in $PARTITIONS; do
 done
 rm zip.log
 
-if [[ ! -d "${HOME}/extract-dtb" ]]; then
-    cd
-    git clone https://github.com/PabloCastellano/extract-dtb
-    cd -
-fi
-python3 ~/extract-dtb/extract-dtb.py ./boot.img -o ./bootimg > /dev/null # Extract boot
-echo 'boot extracted'
-
-if [[ -f dtbo.img ]]; then
-    python3 ~/extract-dtb/extract-dtb.py ./dtbo.img -o ./dtbo > /dev/null # Extract dtbo
-    echo 'dtbo extracted'
-fi
-
-# Extract dts
-mkdir bootdts
-dtb_list=`find bootimg -name '*.dtb' -type f -printf '%P\n' | sort`
-for dtb_file in $dtb_list; do
-	echo -e "Extracting dts from $dtb_file"
-	dtc -I dtb -O dts -o bootdts/$dtb_file bootimg/$dtb_file > /dev/null 2>&1
-	mv bootdts/$dtb_file $(echo "bootdts/$dtb_file" | sed -r 's|.dtb|.dts|g')
-done
-
 # board-info.txt
-find . -type f -name "modem.img" -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING=MPSS.AT." | sed "s|QC_IMAGE_VERSION_STRING=MPSS.AT.|require version-baseband=|g" >> board-info.txt
-find . -type f -name "tz.img" -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING" | sed "s|QC_IMAGE_VERSION_STRING|require version-trustzone|g" >> board-info.txt
-if [ -e vendor/build.prop ]; then
-	strings vendor/build.prop | grep "ro.vendor.build.date.utc" | sed "s|ro.vendor.build.date.utc|require version-vendor|g" >> board-info.txt
+find $PROJECT_DIR/working/${UNZIP_DIR}/modem -type f -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING=MPSS." | sed "s|QC_IMAGE_VERSION_STRING=MPSS.||g" | cut -c 4- | sed -e 's/^/require version-baseband=/' >> $PROJECT_DIR/working/${UNZIP_DIR}/board-info.txt
+find $PROJECT_DIR/working/${UNZIP_DIR}/tz/ -type f -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING" | sed "s|QC_IMAGE_VERSION_STRING|require version-trustzone|g" >> $PROJECT_DIR/working/${UNZIP_DIR}/board-info.txt
+if [ -e $PROJECT_DIR/working/${UNZIP_DIR}/vendor/build.prop ]; then
+	strings $PROJECT_DIR/working/${UNZIP_DIR}/vendor/build.prop | grep "ro.vendor.build.date.utc" | sed "s|ro.vendor.build.date.utc|require version-vendor|g" >> $PROJECT_DIR/working/${UNZIP_DIR}/board-info.txt
 fi
-sort -u -o board-info.txt board-info.txt
+sort -u -o $PROJECT_DIR/working/${UNZIP_DIR}/board-info.txt $PROJECT_DIR/working/${UNZIP_DIR}/board-info.txt
 
 #copy file names
 sudo chown $(whoami) * -R ; chmod -R u+rwX * #ensure final permissions
-for p in $PARTITIONS; do
-    if [[ -d $p ]]; then
-        find $p/ -type f -exec echo {} >> allfiles.txt \;
-    fi
-done
-find bootimg/ -type f -exec echo {} >> allfiles.txt \;
-
-sort allfiles.txt > all_files.txt
-rm allfiles.txt
+find $PROJECT_DIR/working/${UNZIP_DIR} -type f -printf '%P\n' | sort | grep -v ".git/" > $PROJECT_DIR/working/${UNZIP_DIR}/all_files.txt
 
 ls system/build*.prop 2>/dev/null || ls system/system/build*.prop 2>/dev/null || { echo "No system build*.prop found, pushing cancelled!" && exit ;}
 
@@ -109,6 +113,8 @@ description=$(grep -oP "(?<=^ro.build.description=).*" -hs {system,system/system
 [[ -z "${description}" ]] && description="$flavor $release $id $incremental $tags"
 branch=$(echo $description | tr ' ' '-')
 repo=$(echo $brand\_$codename\_dump | tr '[:upper:]' '[:lower:]')
+
+printf "\nflavor: $flavor\nrelease: $release\nid: $id\nincremental: $incremental\ntags: $tags\nfingerprint: $fingerprint\nbrand: $brand\ncodename: $codename\ndescription: $description\nbranch: $branch\nrepo: $repo\n"
 
 user=TadiT7 #set user for github
 git init
