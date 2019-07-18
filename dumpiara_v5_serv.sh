@@ -47,8 +47,8 @@ dtb_list=`find bootimg -name '*.dtb' -type f -printf '%P\n' | sort`
 for dtb_file in $dtb_list; do
 	echo -e "Extracting dts from $dtb_file"
 	dtc -I dtb -O dts -o bootdts/$dtb_file bootimg/$dtb_file > /dev/null 2>&1
+	mv bootdts/$dtb_file $(echo "bootdts/$dtb_file" | sed -r 's|.dtb|.dts|g')
 done
-find bootdts/ -name "*.dtb" -exec rename 's/\.dtb$/.dts/' '{}' \;
 
 # board-info.txt
 find . -type f -name "modem.img" -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING=MPSS.AT." | sed "s|QC_IMAGE_VERSION_STRING=MPSS.AT.|require version-baseband=|g" >> board-info.txt
