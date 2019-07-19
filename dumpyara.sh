@@ -19,7 +19,7 @@ fi
 URL=$1
 if echo "$1" | grep "http" ; then
 	cd $PROJECT_DIR/input
-	axel -a -n64 ${URL:?} #download rom
+	axel -a -n64 ${URL:?} || wget ${URL:?} || exit 1 #download rom
 else
 	cp -a "$1" $PROJECT_DIR/input
 fi
