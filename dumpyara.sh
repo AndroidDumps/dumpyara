@@ -144,6 +144,3 @@ git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;
 git add system/ ;
 git commit -asm "Add system for ${description}" ;
 git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;)
-
-cd $PROJECT_DIR
-rm -rf $PROJECT_DIR/input/${FILE} $PROJECT_DIR/working/${UNZIP_DIR}
