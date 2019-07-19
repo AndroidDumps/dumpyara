@@ -147,3 +147,20 @@ git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;
 git add system/ ;
 git commit -asm "Add system for ${description}" ;
 git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;)
+
+# Telegram channel
+TG_TOKEN=$(cat $PROJECT_DIR/.tgtoken)
+if [ ! -z "$TG_TOKEN" ]; then
+    commit_head=$(git log --format=format:%H | head -n 1)
+    commit_link=$(echo "https://github.com/$ORG/$repo/commit/$commit_head")
+    echo -e "Sending telegram notification"
+    printf "<b>Brand: $brand</b>" > $PROJECT_DIR/working/tg.html
+    printf "\n<b>Device: $codename</b>" >> $PROJECT_DIR/working/tg.html
+    printf "\n<b>Version:</b> $release" >> $PROJECT_DIR/working/tg.html
+    printf "\n<b>Fingerprint:</b> $fingerprint" >> $PROJECT_DIR/working/tg.html
+    printf "\n<b>GitHub:</b>" >> $PROJECT_DIR/working/tg.html
+    printf "\n<a href=\"$commit_link\">Commit</a>" >> $PROJECT_DIR/working/tg.html
+    printf "\n<a href=\"https://github.com/$ORG/$repo/tree/$branch/\">$codename</a>" >> $PROJECT_DIR/working/tg.html
+    . $PROJECT_DIR/telegram.sh "$TG_TOKEN" "@android_dumps" "$PROJECT_DIR/working/tg.html" "HTML" "$PROJECT_DIR/working/telegram.php" > /dev/null 2>&1
+    rm -rf $PROJECT_DIR/working/tg.html
+fi
