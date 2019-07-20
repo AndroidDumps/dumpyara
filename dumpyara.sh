@@ -54,8 +54,7 @@ mkdir $PROJECT_DIR/working/${UNZIP_DIR}/bootdts
 dtb_list=`find $PROJECT_DIR/working/${UNZIP_DIR}/bootimg -name '*.dtb' -type f -printf '%P\n' | sort`
 for dtb_file in $dtb_list; do
 	echo -e "Extracting dts from $dtb_file"
-	dtc -I dtb -O dts -o $PROJECT_DIR/working/${UNZIP_DIR}/bootdts/$dtb_file $PROJECT_DIR/working/${UNZIP_DIR}/bootimg/$dtb_file > /dev/null 2>&1
-	mv $PROJECT_DIR/working/${UNZIP_DIR}/bootdts/$dtb_file $(echo "$PROJECT_DIR/working/${UNZIP_DIR}/bootdts/$dtb_file" | sed -r 's|.dtb|.dts|g')
+	dtc -I dtb -O dts -o $(echo "$PROJECT_DIR/working/${UNZIP_DIR}/bootdts/$dtb_file" | sed -r 's|.dtb|.dts|g') $PROJECT_DIR/working/${UNZIP_DIR}/bootimg/$dtb_file > /dev/null 2>&1
 done
 
 for p in $PARTITIONS; do
