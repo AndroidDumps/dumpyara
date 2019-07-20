@@ -162,6 +162,6 @@ if [ ! -z "$TG_TOKEN" ]; then
     printf "\n<a href=\"$commit_link\">Commit</a>" >> $PROJECT_DIR/working/tg.html
     printf "\n<a href=\"https://github.com/$ORG/$repo/tree/$branch/\">$codename</a>" >> $PROJECT_DIR/working/tg.html
     TEXT=$(cat $PROJECT_DIR/working/tg.html)
-    curl -s "https://api.telegram.org/bot${TG_TOKEN}/sendmessage" --data "text=${TEXT}&chat_id=${CHAT_ID}&parse_mode=HTML" > /dev/null
+    curl -s "https://api.telegram.org/bot${TG_TOKEN}/sendmessage" --data "text=${TEXT}&chat_id=${CHAT_ID}&parse_mode=HTML&disable_web_page_preview=True" > /dev/null
     rm -rf $PROJECT_DIR/working/tg.html
 fi
