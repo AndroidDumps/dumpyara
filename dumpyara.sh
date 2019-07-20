@@ -34,7 +34,7 @@ if [ -d "$PROJECT_DIR/Firmware_extractor" ]; then
 else
     git clone --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor $PROJECT_DIR/Firmware_extractor
 fi
-. $PROJECT_DIR/Firmware_extractor/extractor.sh $PROJECT_DIR/input/${FILE} $PROJECT_DIR/working/${UNZIP_DIR}
+$PROJECT_DIR/Firmware_extractor/extractor.sh $PROJECT_DIR/input/${FILE} $PROJECT_DIR/working/${UNZIP_DIR}
 
 cd $PROJECT_DIR/working/${UNZIP_DIR}
 
