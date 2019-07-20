@@ -1,34 +1,23 @@
 # dumpyara
 
-**Requirements**:
- 
-      Linux (preferably Ubuntu-based, but Debian is ok)
-      Axel
-      Brotli
-      Protobuf
-      7zip
-      device-tree-compiler
+**[Telegram channel](https://t.me/android_dumps)**  
+
+**Script requirements**:
+
+      Linux or Mac
       
-***For Firmware Extractor (Part of Dumpyara)***:
+***For setting up requirements***:
 
-      apt install liblzma-dev python-pip brotli lz4
-      pip install backports.lzma protobuf pycrypto
+      bash setup.sh
 
-Usage:
-`bash dumpyara.sh "<OTAlink> OR <OTA file path>" yourGithubToken`
+**Usage**:
 
+      bash dumpyara.sh "<OTAlink> OR <OTA file path>" yourGithubToken
 
-You can also place your oauth token in a file called `.githubtoken` in the root of this repository, if you wish
-It is ignored by git
+You can also place your github oauth token in a file called `.githubtoken` and telegram bot token in a file called `.tgtoken` in the root of this repository, if you wish It is ignored by git  
+Before you start, make sure that dumpyara scripts are mapped to your own account and nick, otherwise you'll only dump, not push.  
 
+**Supported image types**:  
+check [here](https://github.com/AndroidDumps/Firmware_extractor/blob/master/extractor.sh#L3)  
 
-Before you start, make sure that dumpyara scripts are mapped to your own account and nick, otherwise you'll only dump, not push.
-
-**Supported image types**:
-
-      raw ext4
-      sdat
-      sdat with Brotli compression
-      Android versions up to Pie
-      
 If you're a member of AndroidDumps org, use a token with following permissions: `admin:org, public_repo`
