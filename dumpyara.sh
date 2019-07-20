@@ -120,8 +120,12 @@ printf "\nflavor: $flavor\nrelease: $release\nid: $id\nincremental: $incremental
 
 user=TadiT7 #set user for github
 git init
-git config user.name Tadi
-git config user.email TadiT7@github.com
+if [ -z $(git config --get user.email) ]; then
+    git config user.email TadiT7@github.com
+fi
+if [ -z $(git config --get user.name) ]; then
+    git config user.name Tadi
+fi
 git checkout -b $branch
 find -size +97M -printf '%P\n' -o -name *sensetime* -printf '%P\n' -o -name *.lic -printf '%P\n' > .gitignore
 git add --all
