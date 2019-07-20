@@ -27,7 +27,7 @@ ORG=AndroidDumps #for orgs support, here can write your org name
 FILE=${URL##*/}
 EXTENSION=${URL##*.}
 UNZIP_DIR=${FILE/.$EXTENSION/}
-PARTITIONS="system vendor cust odm oem modem"
+PARTITIONS="system vendor cust odm oem factory product modem"
 
 if [ -d "$PROJECT_DIR/Firmware_extractor" ]; then
     git -C $PROJECT_DIR/Firmware_extractor pull --recurse-submodules
