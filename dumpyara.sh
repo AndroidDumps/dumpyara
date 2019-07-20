@@ -119,10 +119,10 @@ printf "\nflavor: $flavor\nrelease: $release\nid: $id\nincremental: $incremental
 
 user=TadiT7 #set user for github
 git init
-if [ -z $(git config --get user.email) ]; then
+if [ -z "$(git config --get user.email)" ]; then
     git config user.email TadiT7@github.com
 fi
-if [ -z $(git config --get user.name) ]; then
+if [ -z "$(git config --get user.name)" ]; then
     git config user.name Tadi
 fi
 git checkout -b $branch
