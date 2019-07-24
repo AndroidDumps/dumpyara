@@ -58,10 +58,12 @@ for dtb_file in $dtb_list; do
 done
 
 for p in $PARTITIONS; do
-    mkdir $p || rm -rf $p/*
-    echo $p 'extracted'
-    7z x $p.img -y -o$p/ 2>/dev/null >> zip.log
-    rm $p.img 2>/dev/null
+    if [ -e "$p.img" ]; then
+        mkdir $p || rm -rf $p/*
+        echo $p 'extracted'
+        7z x $p.img -y -o$p/ 2>/dev/null >> zip.log
+        rm $p.img 2>/dev/null
+    fi
 done
 rm zip.log
 
