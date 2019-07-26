@@ -75,7 +75,7 @@ fi
 sort -u -o $PROJECT_DIR/working/${UNZIP_DIR}/board-info.txt $PROJECT_DIR/working/${UNZIP_DIR}/board-info.txt
 
 #copy file names
-sudo chown $(whoami) * -R ; chmod -R u+rwX * #ensure final permissions
+chown $(whoami) * -R ; chmod -R u+rwX * #ensure final permissions
 find $PROJECT_DIR/working/${UNZIP_DIR} -type f -printf '%P\n' | sort | grep -v ".git/" > $PROJECT_DIR/working/${UNZIP_DIR}/all_files.txt
 
 ls system/build*.prop 2>/dev/null || ls system/system/build*.prop 2>/dev/null || { echo "No system build*.prop found, pushing cancelled!" && exit ;}
