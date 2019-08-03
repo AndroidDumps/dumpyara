@@ -11,8 +11,7 @@ if [[ -n $2 ]]; then
 elif [[ -f ".githubtoken" ]]; then
     GIT_OAUTH_TOKEN=$(cat .githubtoken)
 else
-    echo "Please provide github oauth token as a parameter or place it in a file called .githubtoken in the root of this repo"
-    exit 1
+    echo "Not found GitHub token. Dumpying locally without pushing to any repo..."
 fi
 
 # download or copy from local?
@@ -120,6 +119,7 @@ repo=$(echo $brand\_$codename\_dump | tr '[:upper:]' '[:lower:]')
 
 printf "\nflavor: $flavor\nrelease: $release\nid: $id\nincremental: $incremental\ntags: $tags\nfingerprint: $fingerprint\nbrand: $brand\ncodename: $codename\ndescription: $description\nbranch: $branch\nrepo: $repo\n"
 
+if [[ -n $2 ]] || [[ -f .githubtoken ]] ; then
 git init
 if [ -z "$(git config --get user.email)" ]; then
     git config user.email AndroidDumps@github.com
@@ -149,7 +149,10 @@ git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;
 git add system/ ;
 git commit -asm "Add system for ${description}" ;
 git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;)
-
+else
+echo "Dump done without pushing to repo."
+exit 1
+fi
 # Telegram channel
 TG_TOKEN=$(cat $PROJECT_DIR/.tgtoken)
 if [ ! -z "$TG_TOKEN" ]; then
