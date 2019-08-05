@@ -18,7 +18,7 @@ fi
 URL=$1
 if echo "$1" | grep "http" ; then
 	cd $PROJECT_DIR/input
-	axel -a -n64 ${URL:?} || wget ${URL:?} || exit 1 #download rom
+	aria2c -x16 ${URL:?} || wget ${URL:?} || exit 1 #download rom
 else
 	cp -a "$1" $PROJECT_DIR/input
 fi
