@@ -11,7 +11,7 @@ if [[ -n $2 ]]; then
 elif [[ -f ".githubtoken" ]]; then
     GIT_OAUTH_TOKEN=$(cat .githubtoken)
 else
-    echo "Not found GitHub token. Dumpying locally without pushing to any repo..."
+    echo "GitHub token not found. Dumping just locally..."
 fi
 
 # download or copy from local?
@@ -22,7 +22,7 @@ if echo "$1" | grep "http" ; then
 else
 	cp -a "$1" $PROJECT_DIR/input
 fi
-ORG=AndroidDumps #for orgs support, here can write your org name
+ORG=AndroidDumps #your GitHub org name
 FILE=${URL##*/}
 EXTENSION=${URL##*.}
 UNZIP_DIR=${FILE/.$EXTENSION/}
@@ -150,7 +150,7 @@ git add system/ ;
 git commit -asm "Add system for ${description}" ;
 git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ;)
 else
-echo "Dump done without pushing to repo."
+echo "Dump done locally."
 exit 1
 fi
 # Telegram channel
