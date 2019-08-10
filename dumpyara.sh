@@ -119,7 +119,7 @@ repo=$(echo $brand\_$codename\_dump | tr '[:upper:]' '[:lower:]')
 
 printf "\nflavor: $flavor\nrelease: $release\nid: $id\nincremental: $incremental\ntags: $tags\nfingerprint: $fingerprint\nbrand: $brand\ncodename: $codename\ndescription: $description\nbranch: $branch\nrepo: $repo\n"
 
-if [[ -n $2 ]] || [[ -f .githubtoken ]] ; then
+if [[ -n $GIT_OAUTH_TOKEN ]] ; then
 git init
 if [ -z "$(git config --get user.email)" ]; then
     git config user.email AndroidDumps@github.com
