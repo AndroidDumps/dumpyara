@@ -3,4 +3,5 @@
 extract-dtb/
 Firmware_extractor/
 input/
+mkbootimg_tools/
 working/

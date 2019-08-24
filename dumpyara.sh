@@ -31,16 +31,20 @@ PARTITIONS="system vendor cust odm oem factory product modem xrom systemex"
 if [ -d "$PROJECT_DIR/Firmware_extractor" ]; then
     git -C $PROJECT_DIR/Firmware_extractor pull --recurse-submodules
 else
-    git clone --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor $PROJECT_DIR/Firmware_extractor
+    git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor $PROJECT_DIR/Firmware_extractor
 fi
 $PROJECT_DIR/Firmware_extractor/extractor.sh $PROJECT_DIR/input/${FILE} $PROJECT_DIR/working/${UNZIP_DIR}
 
 cd $PROJECT_DIR/working/${UNZIP_DIR}
 
 if [ ! -d "$PROJECT_DIR/extract-dtb" ]; then
-    git clone https://github.com/PabloCastellano/extract-dtb $PROJECT_DIR/extract-dtb
+    git clone -q https://github.com/PabloCastellano/extract-dtb $PROJECT_DIR/extract-dtb
+fi
+if [ ! -d "$PROJECT_DIR/mkbootimg_tools" ]; then
+    git clone -q https://github.com/xiaolu/mkbootimg_tools "$PROJECT_DIR/mkbootimg_tools"
 fi
 python3 $PROJECT_DIR/extract-dtb/extract-dtb.py $PROJECT_DIR/working/${UNZIP_DIR}/boot.img -o $PROJECT_DIR/working/${UNZIP_DIR}/bootimg > /dev/null # Extract boot
+bash $PROJECT_DIR/mkbootimg_tools/mkboot $PROJECT_DIR/working/${UNZIP_DIR}/boot.img $PROJECT_DIR/working/${UNZIP_DIR}/boot > /dev/null 2>&1
 echo 'boot extracted'
 
 if [[ -f $PROJECT_DIR/working/${UNZIP_DIR}/dtbo.img ]]; then
