@@ -15,18 +15,26 @@ else
 fi
 
 # download or copy from local?
-URL=$1
 if echo "$1" | grep "http" ; then
+    URL=$1
     cd $PROJECT_DIR/input
     aria2c -x16 -j$(nproc) ${URL} || wget ${URL} || exit 1
 else
-    cp -a "$1" $PROJECT_DIR/input
+    URL=$( realpath "$1" )
 fi
+
 ORG=AndroidDumps #your GitHub org name
 FILE=${URL##*/}
 EXTENSION=${URL##*.}
 UNZIP_DIR=${FILE/.$EXTENSION/}
 PARTITIONS="system vendor cust odm oem factory product modem xrom systemex"
+
+if [ -d "$1" ] ; then
+    echo 'Directory detected. Copying...'
+    cp -a "$1" $PROJECT_DIR/working/${UNZIP_DIR}
+elif [ -f "$1" ] ; then
+    cp -a "$1" $PROJECT_DIR/input
+fi
 
 # clone other repo's
 if [ -d "$PROJECT_DIR/Firmware_extractor" ]; then
@@ -42,7 +50,7 @@ if [ ! -d "$PROJECT_DIR/mkbootimg_tools" ]; then
 fi
 
 # extract rom via Firmware_extractor
-bash $PROJECT_DIR/Firmware_extractor/extractor.sh $PROJECT_DIR/input/${FILE} $PROJECT_DIR/working/${UNZIP_DIR}
+[[ ! -d "$1" ]] && bash $PROJECT_DIR/Firmware_extractor/extractor.sh $PROJECT_DIR/input/${FILE} $PROJECT_DIR/working/${UNZIP_DIR}
 
 # Extract boot.img
 python3 $PROJECT_DIR/extract-dtb/extract-dtb.py $PROJECT_DIR/working/${UNZIP_DIR}/boot.img -o $PROJECT_DIR/working/${UNZIP_DIR}/bootimg > /dev/null # Extract boot
