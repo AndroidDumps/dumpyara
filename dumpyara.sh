@@ -126,6 +126,7 @@ repo=$(echo $brand\_$codename\_dump | tr '[:upper:]' '[:lower:]')
 printf "\nflavor: $flavor\nrelease: $release\nid: $id\nincremental: $incremental\ntags: $tags\nfingerprint: $fingerprint\nbrand: $brand\ncodename: $codename\ndescription: $description\nbranch: $branch\nrepo: $repo\n"
 
 if [[ -n $GIT_OAUTH_TOKEN ]] ; then
+    curl --silent --fail "https://raw.githubusercontent.com/$ORG/$repo/$branch/all_files.txt" 2>/dev/null && echo "Firmware already dumped!" && exit 1
     git init
     if [ -z "$(git config --get user.email)" ]; then
         git config user.email AndroidDumps@github.com
