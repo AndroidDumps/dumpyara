@@ -111,6 +111,12 @@ incremental=$(grep -oP "(?<=^ro.build.version.incremental=).*" -hs {system,syste
 tags=$(grep -oP "(?<=^ro.build.tags=).*" -hs {system,system/system,vendor}/build*.prop)
 [[ -z "${tags}" ]] && tags=$(grep -oP "(?<=^ro.vendor.build.tags=).*" -hs vendor/build*.prop)
 [[ -z "${tags}" ]] && tags=$(grep -oP "(?<=^ro.system.build.tags=).*" -hs {system,system/system}/build*.prop)
+platform=$(grep -oP "(?<=^ro.board.platform=).*" -hs {system,system/system,vendor}/build*.prop)
+[[ -z "${platform}" ]] && tags=$(grep -oP "(?<=^ro.vendor.board.platform=).*" -hs vendor/build*.prop)
+[[ -z "${platform}" ]] && tags=$(grep -oP "(?<=^ro.system.board.platform=).*" -hs {system,system/system}/build*.prop)
+manufacturer=$(grep -oP "(?<=^ro.product.manufacturer=).*" -hs {system,system/system,vendor}/build*.prop)
+[[ -z "${manufacturer}" ]] && tags=$(grep -oP "(?<=^ro.vendor.product.manufacturer=).*" -hs vendor/build*.prop)
+[[ -z "${manufacturer}" ]] && tags=$(grep -oP "(?<=^ro.system.product.manufacturer=).*" -hs {system,system/system}/build*.prop)
 fingerprint=$(grep -oP "(?<=^ro.build.fingerprint=).*" -hs {system,system/system,vendor}/build*.prop)
 [[ -z "${fingerprint}" ]] && fingerprint=$(grep -oP "(?<=^ro.vendor.build.fingerprint=).*" -hs vendor/build*.prop)
 [[ -z "${fingerprint}" ]] && fingerprint=$(grep -oP "(?<=^ro.system.build.fingerprint=).*" -hs {system,system/system}/build*.prop)
@@ -131,7 +137,10 @@ description=$(grep -oP "(?<=^ro.build.description=).*" -hs {system,system/system
 [[ -z "${description}" ]] && description="$flavor $release $id $incremental $tags"
 branch=$(echo $description | tr ' ' '-')
 repo=$(echo $brand\_$codename\_dump | tr '[:upper:]' '[:lower:]')
-printf "\nflavor: $flavor\nrelease: $release\nid: $id\nincremental: $incremental\ntags: $tags\nfingerprint: $fingerprint\nbrand: $brand\ncodename: $codename\ndescription: $description\nbranch: $branch\nrepo: $repo\n"
+platform=$(echo $platform | tr '[:upper:]' '[:lower:]' | tr -dc '[[:print:]]' | tr '_' '-' | cut -c 1-35)
+top_codename=$(echo $codename | tr '[:upper:]' '[:lower:]' | tr -dc '[[:print:]]' | tr '_' '-' | cut -c 1-35)
+manufacturer=$(echo $manufacturer | tr '[:upper:]' '[:lower:]' | tr -dc '[[:print:]]' | tr '_' '-' | cut -c 1-35)
+printf "\nflavor: $flavor\nrelease: $release\nid: $id\nincremental: $incremental\ntags: $tags\nfingerprint: $fingerprint\nbrand: $brand\ncodename: $codename\ndescription: $description\nbranch: $branch\nrepo: $repo\nmanufacturer: $manufacturer\nplatform: $platform\ntop_codename: $top_codename\n"
 
 if [[ -n $GIT_OAUTH_TOKEN ]] ; then
     curl --silent --fail "https://raw.githubusercontent.com/$ORG/$repo/$branch/all_files.txt" 2>/dev/null && echo "Firmware already dumped!" && exit 1
@@ -147,6 +156,7 @@ if [[ -n $GIT_OAUTH_TOKEN ]] ; then
     git add --all
 
     curl -s -X POST -H "Authorization: token ${GIT_OAUTH_TOKEN}" -d '{ "name": "'"$repo"'" }' "https://api.github.com/orgs/${ORG}/repos" #create new repo
+    curl -s -X PUT -H "Authorization: token ${GIT_OAUTH_TOKEN}" -H "Accept: application/vnd.github.mercy-preview+json" -d '{ "names": ["'"$manufacturer"'","'"$platform"'","'"$top_codename"'"]}' "https://api.github.com/repos/${ORG}/${repo}/topics"
     git remote add origin https://github.com/$ORG/${repo,,}.git
     git commit -asm "Add ${description}"
     git push https://$GIT_OAUTH_TOKEN@github.com/$ORG/${repo,,}.git $branch ||
