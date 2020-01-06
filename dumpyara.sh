@@ -46,7 +46,7 @@ if [ ! -d "$PROJECT_DIR/extract-dtb" ]; then
     git clone -q https://github.com/PabloCastellano/extract-dtb $PROJECT_DIR/extract-dtb
 fi
 if [ ! -d "$PROJECT_DIR/mkbootimg_tools" ]; then
-    git clone -q https://github.com/xiaolu/mkbootimg_tools "$PROJECT_DIR/mkbootimg_tools"
+    git clone -q https://github.com/carlitros900/mkbootimg_tools "$PROJECT_DIR/mkbootimg_tools"
 fi
 
 # extract rom via Firmware_extractor
