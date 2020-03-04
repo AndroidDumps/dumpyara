@@ -15,7 +15,7 @@ else
 fi
 
 # download or copy from local?
-if echo "$1" | grep "http" ; then
+if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' ; then
     URL=$1
     cd $PROJECT_DIR/input
     aria2c -x16 -j$(nproc) ${URL} || wget ${URL} || exit 1
