@@ -7,7 +7,7 @@ if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
     URL=$1
     { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --show-progress --progress=bar:force "${URL}" || exit 1; }
 else
-    URL=$(printf "$PWD/%s\n" "$1")
+    URL=$(printf "%s\n" "$1")
     [[ -e "$URL" ]] || { echo "Invalid Input" && exit 1; }
 fi
 
