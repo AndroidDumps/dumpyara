@@ -11,8 +11,8 @@ else
     [[ -e "$URL" ]] || { echo "Invalid Input" && exit 1; }
 fi
 
+PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 # Create input & working directory if it does not exist
-PROJECT_DIR="$PWD"
 mkdir -p "$PROJECT_DIR"/input "$PROJECT_DIR"/working
 
 # GitHub token
