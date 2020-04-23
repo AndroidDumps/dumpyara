@@ -24,8 +24,6 @@ else
     echo "GitHub token not found. Dumping just locally..."
 fi
 
-cd "$PROJECT_DIR"/input || exit
-
 ORG=AndroidDumps #your GitHub org name
 FILE=${URL##*/}
 EXTENSION=${URL##*.}
@@ -38,6 +36,8 @@ if [[ -d "$1" ]]; then
 elif [[ -f "$1" ]]; then
     cp -a "$1" "$PROJECT_DIR"/input > /dev/null 2>&1
 fi
+
+cd "$PROJECT_DIR"/input || exit
 
 # clone other repo's
 if [[ -d "$PROJECT_DIR/Firmware_extractor" ]]; then
