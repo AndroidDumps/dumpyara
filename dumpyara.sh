@@ -34,6 +34,7 @@ if [[ -d "$1" ]]; then
     echo 'Directory detected. Copying...'
     cp -a "$1" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
 elif [[ -f "$1" ]]; then
+    echo 'File detected. Copying...'
     cp -a "$1" "$PROJECT_DIR"/input > /dev/null 2>&1
 fi
 
@@ -60,7 +61,7 @@ python3 "$PROJECT_DIR"/extract-dtb/extract-dtb.py "$PROJECT_DIR"/working/"${UNZI
 bash "$PROJECT_DIR"/mkbootimg_tools/mkboot "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot > /dev/null 2>&1
 echo 'boot extracted'
 
-if [[ -f $PROJECT_DIR/working/${UNZIP_DIR}/dtbo.img ]]; then
+if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img ]]; then
     python3 "$PROJECT_DIR"/extract-dtb/extract-dtb.py "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo > /dev/null # Extract dtbo
     echo 'dtbo extracted'
 fi
@@ -69,7 +70,7 @@ fi
 mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootdts
 dtb_list=$(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootimg -name '*.dtb' -type f -printf '%P\n' | sort)
 for dtb_file in $dtb_list; do
-    dtc -I dtb -O dts -o "$(echo "$PROJECT_DIR/working/${UNZIP_DIR}/bootdts/$dtb_file" | sed -r 's|.dtb|.dts|g')" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootimg/"$dtb_file" > /dev/null 2>&1
+    dtc -I dtb -O dts -o "$(echo "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootdts/"$dtb_file" | sed -r 's|.dtb|.dts|g')" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootimg/"$dtb_file" > /dev/null 2>&1
 done
 
 # extract PARTITIONS
