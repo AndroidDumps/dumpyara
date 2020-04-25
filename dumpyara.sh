@@ -2,15 +2,6 @@
 
 [[ $# = 0 ]] && echo "No Input" && exit 1
 
-# download or copy from local?
-if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
-    URL=$1
-    { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --show-progress --progress=bar:force "${URL}" || exit 1; }
-else
-    URL=$(printf "%s\n" "$1")
-    [[ -e "$URL" ]] || { echo "Invalid Input" && exit 1; }
-fi
-
 PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 # Create input & working directory if it does not exist
 mkdir -p "$PROJECT_DIR"/input "$PROJECT_DIR"/working
@@ -22,6 +13,16 @@ elif [[ -f ".githubtoken" ]]; then
     GIT_OAUTH_TOKEN=$(< .githubtoken)
 else
     echo "GitHub token not found. Dumping just locally..."
+fi
+
+# download or copy from local?
+if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
+    URL=$1
+    cd "$PROJECT_DIR"/input || exit
+    { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --show-progress --progress=bar:force "${URL}" || exit 1; }
+else
+    URL=$(printf "%s\n" "$1")
+    [[ -e "$URL" ]] || { echo "Invalid Input" && exit 1; }
 fi
 
 ORG=AndroidDumps #your GitHub org name
@@ -37,8 +38,6 @@ elif [[ -f "$1" ]]; then
     echo 'File detected. Copying...'
     cp -a "$1" "$PROJECT_DIR"/input > /dev/null 2>&1
 fi
-
-cd "$PROJECT_DIR"/input || exit
 
 # clone other repo's
 if [[ -d "$PROJECT_DIR/Firmware_extractor" ]]; then
