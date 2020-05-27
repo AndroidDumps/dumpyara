@@ -1,6 +1,7 @@
 .githubtoken
 .tgtoken
 extract-dtb/
+extract-ikconfig
 Firmware_extractor/
 input/
 mkbootimg_tools/
