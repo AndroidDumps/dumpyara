@@ -20,14 +20,15 @@ if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
     URL=$1
     cd "$PROJECT_DIR"/input || exit
     { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --show-progress --progress=bar:force "${URL}" || exit 1; }
+    detox "${URL}"
 else
     URL=$(printf "%s\n" "$1")
     [[ -e "$URL" ]] || { echo "Invalid Input" && exit 1; }
 fi
 
 ORG=AndroidDumps #your GitHub org name
-FILE=${URL##*/}
-EXTENSION=${URL##*.}
+FILE=$(echo ${URL##*/} | inline-detox)
+EXTENSION=$(echo ${URL##*.} | inline-detox)
 UNZIP_DIR=${FILE/.$EXTENSION/}
 PARTITIONS="system vendor cust odm oem factory product modem xrom systemex"
 
@@ -36,7 +37,7 @@ if [[ -d "$1" ]]; then
     cp -a "$1" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
 elif [[ -f "$1" ]]; then
     echo 'File detected. Copying...'
-    cp -a "$1" "$PROJECT_DIR"/input > /dev/null 2>&1
+    cp -a "$1" "$PROJECT_DIR"/input/"${FILE}" > /dev/null 2>&1
 fi
 
 # clone other repo's
