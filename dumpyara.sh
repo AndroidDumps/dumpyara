@@ -41,6 +41,8 @@ elif [[ -f "$1" ]]; then
 fi
 
 # clone other repo's
+    echo 'Cloning...'
+    echo 'If stuck for a long time, please use the agent software, and then execute this command again'
 if [[ -d "$PROJECT_DIR/Firmware_extractor" ]]; then
     git -C "$PROJECT_DIR"/Firmware_extractor pull --recurse-submodules
 else
