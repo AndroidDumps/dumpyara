@@ -46,13 +46,19 @@ if [[ -d "$PROJECT_DIR/Firmware_extractor" ]]; then
 else
     git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "$PROJECT_DIR"/Firmware_extractor
 fi
-if [[ ! -d "$PROJECT_DIR/extract-dtb" ]]; then
+if [[ -d "$PROJECT_DIR/extract-dtb" ]]; then
+    git -C "$PROJECT_DIR"/extract-dtb pull --recurse-submodules
+else
     git clone -q https://github.com/PabloCastellano/extract-dtb "$PROJECT_DIR"/extract-dtb
 fi
-if [[ ! -d "$PROJECT_DIR/mkbootimg_tools" ]]; then
+if [[ -d "$PROJECT_DIR/mkbootimg_tools" ]]; then
+    git -C "$PROJECT_DIR"/mkbootimg_tools pull --recurse-submodules
+else
     git clone -q https://github.com/carlitros900/mkbootimg_tools "$PROJECT_DIR/mkbootimg_tools"
 fi
-if [[ ! -d "$PROJECT_DIR/vmlinux-to-elf" ]]; then
+if [[ -d "$PROJECT_DIR/vmlinux-to-elf" ]]; then
+    git -C "$PROJECT_DIR"/vmlinux-to-elf pull --recurse-submodules
+else
     git clone -q https://github.com/marin-m/vmlinux-to-elf "$PROJECT_DIR/vmlinux-to-elf"
 fi
 
