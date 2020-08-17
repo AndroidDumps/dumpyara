@@ -20,7 +20,7 @@ if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
     URL=$1
     cd "$PROJECT_DIR"/input || exit
     { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --show-progress --progress=bar:force "${URL}" || exit 1; }
-    detox "${URL}"
+    detox "${URL##*/}"
 else
     URL=$(printf "%s\n" "$1")
     [[ -e "$URL" ]] || { echo "Invalid Input" && exit 1; }
