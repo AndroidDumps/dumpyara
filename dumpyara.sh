@@ -30,7 +30,7 @@ ORG=AndroidDumps #your GitHub org name
 FILE=$(echo ${URL##*/} | inline-detox)
 EXTENSION=$(echo ${URL##*.} | inline-detox)
 UNZIP_DIR=${FILE/.$EXTENSION/}
-PARTITIONS="system vendor cust odm oem factory product modem xrom systemex"
+PARTITIONS="system vendor cust odm oem factory product modem xrom systemex system_ext"
 
 if [[ -d "$1" ]]; then
     echo 'Directory detected. Copying...'
