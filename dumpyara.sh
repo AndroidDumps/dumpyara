@@ -117,11 +117,6 @@ if [ -e "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor/build.prop ]; then
 fi
 sort -u -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt
 
-# copy file names
-chown "$(whoami)" ./* -R
-chmod -R u+rwX ./* #ensure final permissions
-find "$PROJECT_DIR"/working/"${UNZIP_DIR}" -type f -printf '%P\n' | sort | grep -v ".git/" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/all_files.txt
-
 # set variables
 ls system/build*.prop 2> /dev/null || ls system/system/build*.prop 2> /dev/null || { echo "No system build*.prop found, pushing cancelled!" && exit; }
 flavor=$(grep -oP "(?<=^ro.build.flavor=).*" -hs {system,system/system,vendor}/build*.prop)
@@ -191,6 +186,11 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/"${twrpimg}" ]]; then
     fi
 fi
 cd "$PROJECT_DIR"/working/"${UNZIP_DIR}"
+
+# copy file names
+chown "$(whoami)" ./* -R
+chmod -R u+rwX ./* #ensure final permissions
+find "$PROJECT_DIR"/working/"${UNZIP_DIR}" -type f -printf '%P\n' | sort | grep -v ".git/" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/all_files.txt
 
 if [[ -n $GIT_OAUTH_TOKEN ]]; then
     curl --silent --fail "https://raw.githubusercontent.com/$ORG/$repo/$branch/all_files.txt" 2> /dev/null && echo "Firmware already dumped!" && exit 1
