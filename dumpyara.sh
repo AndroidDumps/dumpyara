@@ -180,6 +180,7 @@ fi
 if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/"${twrpimg}" ]]; then
     python3 -m twrpdtgen "$PROJECT_DIR"/working/"${UNZIP_DIR}"/"${twrpimg}"
     if [[ "$?" = 0 ]]; then
+        rm -rf "$PROJECT_DIR"/TWRP-device-tree-generator/working/*/*/.git
         mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/twrp-device-tree
         mv "$PROJECT_DIR"/TWRP-device-tree-generator/working/* "$PROJECT_DIR"/working/"${UNZIP_DIR}"/twrp-device-tree
         [[ ! -e "${PROJECT_DIR}"/working/"${UNZIP_DIR}"/twrp-device-tree/README.md ]] && curl https://raw.githubusercontent.com/wiki/SebaUbuntu/TWRP-device-tree-generator/4.-Build-TWRP-from-source.md > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/twrp-device-tree/README.md
