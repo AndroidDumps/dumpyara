@@ -61,11 +61,6 @@ if [[ -d "$PROJECT_DIR/vmlinux-to-elf" ]]; then
 else
     git clone -q https://github.com/marin-m/vmlinux-to-elf "$PROJECT_DIR/vmlinux-to-elf"
 fi
-if [[ -d "$PROJECT_DIR/TWRP-device-tree-generator" ]]; then
-    git -C "$PROJECT_DIR"/TWRP-device-tree-generator pull --recurse-submodules
-else
-    git clone -q https://github.com/SebaUbuntu/TWRP-device-tree-generator "$PROJECT_DIR/TWRP-device-tree-generator"
-fi
 
 # extract rom via Firmware_extractor
 [[ ! -d "$1" ]] && bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "$PROJECT_DIR"/input/"${FILE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
@@ -170,23 +165,19 @@ printf "# %s\n- manufacturer: %s\n- platform: %s\n- codename: %s\n- flavor: %s\n
 cat "$PROJECT_DIR"/working/"${UNZIP_DIR}"/README.md
 
 # create TWRP device tree if possible
-cd "$PROJECT_DIR"/TWRP-device-tree-generator
-pip3 install .
 if [[ "$is_ab" = true ]]; then
-    twrpimg=boot.img
+    twrpimg="$PROJECT_DIR"/working/"${UNZIP_DIR}"/"boot.img"
 else
-    twrpimg=recovery.img
+    twrpimg="$PROJECT_DIR"/working/"${UNZIP_DIR}"/"recovery.img"
 fi
-if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/"${twrpimg}" ]]; then
-    python3 -m twrpdtgen "$PROJECT_DIR"/working/"${UNZIP_DIR}"/"${twrpimg}"
+if [[ -f "${twrpimg}" ]]; then
+    twrpdt="$PROJECT_DIR"/working/"${UNZIP_DIR}"/twrp-device-tree
+    python3 -m twrpdtgen "$twrpimg" --output "$twrpdt" -v
     if [[ "$?" = 0 ]]; then
-        rm -rf "$PROJECT_DIR"/TWRP-device-tree-generator/working/*/*/.git
-        mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/twrp-device-tree
-        mv "$PROJECT_DIR"/TWRP-device-tree-generator/working/* "$PROJECT_DIR"/working/"${UNZIP_DIR}"/twrp-device-tree
-        [[ ! -e "${PROJECT_DIR}"/working/"${UNZIP_DIR}"/twrp-device-tree/README.md ]] && curl https://raw.githubusercontent.com/wiki/SebaUbuntu/TWRP-device-tree-generator/4.-Build-TWRP-from-source.md > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/twrp-device-tree/README.md
+        rm -rf "$twrpdt"/*/*/.git
+        [[ ! -e "$twrpdt"/README.md ]] && curl https://raw.githubusercontent.com/wiki/SebaUbuntu/TWRP-device-tree-generator/4.-Build-TWRP-from-source.md > "$twrpdt"/README.md
     fi
 fi
-cd "$PROJECT_DIR"/working/"${UNZIP_DIR}"
 
 # copy file names
 chown "$(whoami)" ./* -R
