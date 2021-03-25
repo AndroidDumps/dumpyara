@@ -1,7 +1,7 @@
 # dumpyara
 
 **[Telegram channel (feed)](https://t.me/android_dumps)**  
-**[Telegram group for dump requests](https://t.me/dumprequests)**
+**[Telegram group for dump requests](https://t.me/joinchat/SjCNPhqgXVEGXJqI)**
 
 **Script requirements**:
 
