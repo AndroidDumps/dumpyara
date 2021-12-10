@@ -8,7 +8,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     fi
     PIP=pip3
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    brew install protobuf xz brotli lz4 aria2
+    brew install protobuf xz brotli lz4 aria2 detox coreutils p7zip gawk
     PIP=pip
 fi
 
