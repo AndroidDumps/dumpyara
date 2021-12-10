@@ -2,6 +2,11 @@
 
 [[ $# = 0 ]] && echo "No Input" && exit 1
 
+OS=`uname`
+if [ "$OS" = 'Darwin' ]; then
+    export LC_CTYPE=C
+fi
+
 PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 # Create input & working directory if it does not exist
 mkdir -p "$PROJECT_DIR"/input "$PROJECT_DIR"/working
