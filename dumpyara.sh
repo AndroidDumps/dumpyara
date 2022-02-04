@@ -191,7 +191,7 @@ else
 fi
 if [[ -f "${twrpimg}" ]]; then
     twrpdt="$PROJECT_DIR"/working/"${UNZIP_DIR}"/twrp-device-tree
-    python3 -m twrpdtgen "$twrpimg" --output "$twrpdt" --no-git -v
+    python3 -m twrpdtgen "$twrpimg" --output "$twrpdt"
     if [[ "$?" = 0 ]]; then
         [[ ! -e "$twrpdt"/README.md ]] && curl https://raw.githubusercontent.com/wiki/SebaUbuntu/TWRP-device-tree-generator/4.-Build-TWRP-from-source.md > "$twrpdt"/README.md
     fi
