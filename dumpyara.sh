@@ -116,12 +116,29 @@ for p in $PARTITIONS; do
                 if [ $? -eq 0 ]; then
                     rm -fv "$p".img > /dev/null 2>&1
                 else
-                    echo "Couldn't extract $p partition. It might use an unsupported filesystem. For EROFS: make sure you're using Linux 5.4+ kernel"
+                    echo "Couldn't extract $p partition by fsck.erofs. Using mount loop"
+                    sudo mount -o loop -t auto "$p".img "$p"
+                    mkdir "${p}_"
+                    sudo cp -rf "${p}/"* "${p}_"
+                    sudo umount "${p}"
+                    sudo cp -rf "${p}_/"* "${p}"
+                    sudo rm -rf "${p}_"
+                    if [ $? -eq 0 ]; then
+                        rm -fv "$p".img > /dev/null 2>&1
+                    else
+                        echo "Couldn't extract $p partition. It might use an unsupported filesystem."
+                        echo "For EROFS: make sure you're using Linux 5.4+ kernel."
+                        echo "For F2FS: make sure you're using Linux 5.15+ kernel."
+                    fi
                 fi
             fi
         fi
     fi
 done
+
+# Fix permissions
+sudo chown "$(whoami)" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/./* -fR
+sudo chmod -fR u+rwX "$PROJECT_DIR"/working/"${UNZIP_DIR}"/./*
 
 # board-info.txt
 find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/modem -type f -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING=MPSS." | sed "s|QC_IMAGE_VERSION_STRING=MPSS.||g" | cut -c 4- | sed -e 's/^/require version-baseband=/' >> "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt
