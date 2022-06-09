@@ -13,5 +13,9 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     brew install protobuf xz brotli lz4 aria2 detox coreutils p7zip gawk
     PIP=pip
 fi
-
 sudo "$PIP" install backports.lzma extract-dtb protobuf pycrypto docopt zstandard twrpdtgen
+
+elif [[ "$OSTYPE" == "windows"* ]]; then
+    ./setup-win.ps1
+fi
+
