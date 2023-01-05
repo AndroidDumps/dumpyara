@@ -233,6 +233,7 @@ chmod -R u+rwX ./* #ensure final permissions
 find "$PROJECT_DIR"/working/"${UNZIP_DIR}" -type f -printf '%P\n' | sort | grep -v ".git/" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/all_files.txt
 
 if [[ -n $GIT_OAUTH_TOKEN ]]; then
+    GITPUSH=(git push https://"$GIT_OAUTH_TOKEN"@github.com/$ORG/"${repo,,}".git "$branch")
     curl --silent --fail "https://raw.githubusercontent.com/$ORG/$repo/$branch/all_files.txt" 2> /dev/null && echo "Firmware already dumped!" && exit 1
     git init
     if [[ -z "$(git config --get user.email)" ]]; then
@@ -241,31 +242,31 @@ if [[ -n $GIT_OAUTH_TOKEN ]]; then
     if [[ -z "$(git config --get user.name)" ]]; then
         git config user.name AndroidDumps
     fi
-    git checkout -b "$branch"
-    find . -size +97M -printf '%P\n' -o -name "*sensetime*" -printf '%P\n' -o -name "*.lic" -printf '%P\n' >| .gitignore
-    git add --all
-
     curl -s -X POST -H "Authorization: token ${GIT_OAUTH_TOKEN}" -d '{ "name": "'"$repo"'" }' "https://api.github.com/orgs/${ORG}/repos" #create new repo
     curl -s -X PUT -H "Authorization: token ${GIT_OAUTH_TOKEN}" -H "Accept: application/vnd.github.mercy-preview+json" -d '{ "names": ["'"$manufacturer"'","'"$platform"'","'"$top_codename"'"]}' "https://api.github.com/repos/${ORG}/${repo}/topics"
     git remote add origin https://github.com/$ORG/"${repo,,}".git
+    git checkout -b "$branch"
+    find . -size +97M -printf '%P\n' -o -name "*sensetime*" -printf '%P\n' -o -name "*.lic" -printf '%P\n' >| .gitignore
+    git add --all
     git commit -asm "Add ${description}"
-    git push https://"$GIT_OAUTH_TOKEN"@github.com/$ORG/"${repo,,}".git "$branch" ||
-        (
-            git update-ref -d HEAD
-            git reset system/ vendor/
-            git checkout -b "$branch"
-            git commit -asm "Add extras for ${description}"
-            git push https://"$GIT_OAUTH_TOKEN"@github.com/$ORG/"${repo,,}".git "$branch"
-            git add vendor/
-            git commit -asm "Add vendor for ${description}"
-            git push https://"$GIT_OAUTH_TOKEN"@github.com/$ORG/"${repo,,}".git "$branch"
-            git add system/system/app/ system/system/priv-app/ || git add system/app/ system/priv-app/
-            git commit -asm "Add apps for ${description}"
-            git push https://"$GIT_OAUTH_TOKEN"@github.com/$ORG/"${repo,,}".git "$branch"
-            git add system/
-            git commit -asm "Add system for ${description}"
-            git push https://"$GIT_OAUTH_TOKEN"@github.com/$ORG/"${repo,,}".git "$branch"
-        )
+    git update-ref -d HEAD
+    git reset system/ vendor/ product/
+    git checkout -b "$branch"
+    git commit -asm "Add extras for ${description}" && "${GITPUSH[@]}"
+    git add vendor/
+    git commit -asm "Add vendor for ${description}" && "${GITPUSH[@]}"
+    git add system/system/app/ || git add system/app/
+    git commit -asm "Add system app for ${description}" && "${GITPUSH[@]}"
+    git add system/system/priv-app/ || git add system/priv-app/
+    git commit -asm "Add system priv-app for ${description}" && "${GITPUSH[@]}"
+    git add system/
+    git commit -asm "Add system for ${description}" && "${GITPUSH[@]}"
+    git add product/app/
+    git commit -asm "Add product app for ${description}" && "${GITPUSH[@]}"
+    git add product/priv-app/
+    git commit -asm "Add product priv-app for ${description}" && "${GITPUSH[@]}"
+    git add product/
+    git commit -asm "Add product for ${description}" && "${GITPUSH[@]}"
 else
     echo "Dump done locally."
     exit 1
