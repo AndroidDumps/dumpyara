@@ -29,7 +29,10 @@ if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
         URL=$1
     fi
     cd "$PROJECT_DIR"/input || exit
-    { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --show-progress --progress=bar:force "${URL}" || exit 1; }
+    { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --content-disposition --show-progress --progress=bar:force "${URL}" || exit 1; }
+    if [[ ! -f "$(echo ${URL##*/} | inline-detox)" ]]; then
+        URL=$(wget --server-response --spider "${URL}" 2>&1 | awk -F"filename=" '{print $2}')
+    fi
     detox "${URL##*/}"
 else
     URL=$(printf "%s\n" "$1")
