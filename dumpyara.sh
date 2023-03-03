@@ -11,6 +11,16 @@ PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 # Create input & working directory if it does not exist
 mkdir -p "$PROJECT_DIR"/input "$PROJECT_DIR"/working
 
+# Determine which command to use for privilege escalation
+if command -v sudo > /dev/null 2>&1; then
+    sudo_cmd="sudo"
+elif command -v doas > /dev/null 2>&1; then
+    sudo_cmd="doas"
+else
+    echo "Neither sudo nor doas found. Please install one of them."
+    exit 1
+fi
+
 # GitHub token
 if [[ -n $2 ]]; then
     GIT_OAUTH_TOKEN=$2
@@ -117,12 +127,12 @@ for p in $PARTITIONS; do
                     rm -fv "$p".img > /dev/null 2>&1
                 else
                     echo "Couldn't extract $p partition by fsck.erofs. Using mount loop"
-                    sudo mount -o loop -t auto "$p".img "$p"
+                    $sudo_cmd mount -o loop -t auto "$p".img "$p"
                     mkdir "${p}_"
-                    sudo cp -rf "${p}/"* "${p}_"
-                    sudo umount "${p}"
-                    sudo cp -rf "${p}_/"* "${p}"
-                    sudo rm -rf "${p}_"
+                    $sudo_cmd cp -rf "${p}/"* "${p}_"
+                    $sudo_cmd umount "${p}"
+                    $sudo_cmd cp -rf "${p}_/"* "${p}"
+                    $sudo_cmd rm -rf "${p}_"
                     if [ $? -eq 0 ]; then
                         rm -fv "$p".img > /dev/null 2>&1
                     else
@@ -137,8 +147,8 @@ for p in $PARTITIONS; do
 done
 
 # Fix permissions
-sudo chown "$(whoami)" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/./* -fR
-sudo chmod -fR u+rwX "$PROJECT_DIR"/working/"${UNZIP_DIR}"/./*
+$sudo_cmd chown "$(whoami)" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/./* -fR
+$sudo_cmd chmod -fR u+rwX "$PROJECT_DIR"/working/"${UNZIP_DIR}"/./*
 
 # board-info.txt
 find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/modem -type f -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING=MPSS." | sed "s|QC_IMAGE_VERSION_STRING=MPSS.||g" | cut -c 4- | sed -e 's/^/require version-baseband=/' >> "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt
