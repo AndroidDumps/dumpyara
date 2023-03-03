@@ -21,6 +21,9 @@ else
     exit 1
 fi
 
+# Activate virtual environment
+source .venv/bin/activate
+
 # GitHub token
 if [[ -n $2 ]]; then
     GIT_OAUTH_TOKEN=$2
