@@ -1,5 +1,6 @@
 .githubtoken
 .tgtoken
+.venv
 extract-dtb/
 extract-ikconfig
 Firmware_extractor/
