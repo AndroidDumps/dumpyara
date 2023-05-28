@@ -12,7 +12,7 @@ fi
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
     if [[ "$(command -v apt)" != "" ]]; then
-        $sudo_cmd apt install unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract device-tree-compiler liblzma-dev python3-pip brotli liblz4-tool axel gawk aria2 detox cpio rename liblz4-dev curl -y
+        $sudo_cmd apt install unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract device-tree-compiler liblzma-dev python3-pip brotli liblz4-tool axel gawk aria2 detox cpio rename liblz4-dev curl python3-venv -y
     elif [[ "$(command -v dnf)" != "" ]]; then
         $sudo_cmd dnf install -y unace unrar zip unzip sharutils uudeview arj cabextract file-roller dtc python3-pip brotli axel aria2 detox cpio lz4 python3-devel xz-devel p7zip p7zip-plugins
     elif [[ "$(command -v pacman)" != "" ]]; then
