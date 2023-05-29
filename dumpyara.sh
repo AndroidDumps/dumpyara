@@ -117,22 +117,23 @@ done
 # extract PARTITIONS
 cd "$PROJECT_DIR"/working/"${UNZIP_DIR}" || exit
 for p in $PARTITIONS; do
-    if [[ -e "$p.img" ]]; then
-        mkdir "$p" 2> /dev/null || rm -rf "${p:?}"/*
-        echo "Extracting $p partition"
-        7z x "$p".img -y -o"$p"/ > /dev/null 2>&1
-        if [ $? -eq 0 ]; then
+    # Try to extract images via fsck.erofs
+    if [ -f $p.img ] && [ $p != "modem" ]; then
+        echo "Trying to extract $p partition via fsck.erofs."
+        "$PROJECT_DIR"/Firmware_extractor/tools/Linux/bin/fsck.erofs --extract="$p" "$p".img
+        # Deletes images if they were correctly extracted via fsck.erofs
+        if [ -d "$p" ]; then
             rm "$p".img > /dev/null 2>&1
         else
-        #handling erofs images, which can't be handled by 7z
-            if [ -f $p.img ] && [ $p != "modem" ]; then
-                echo "Couldn't extract $p partition by 7z. Using fsck.erofs."
-                rm -rf "${p}"/*
-                "$PROJECT_DIR"/Firmware_extractor/tools/Linux/bin/fsck.erofs --extract="$p" "$p".img
+        # Uses 7z if images could not be extracted via fsck.erofs
+            if [[ -e "$p.img" ]]; then
+                mkdir "$p" 2> /dev/null || rm -rf "${p:?}"/*
+                echo "Extraction via fsck.erofs failed, extracting $p partition via 7z"
+                7z x "$p".img -y -o"$p"/ > /dev/null 2>&1
                 if [ $? -eq 0 ]; then
-                    rm -fv "$p".img > /dev/null 2>&1
+                    rm "$p".img > /dev/null 2>&1
                 else
-                    echo "Couldn't extract $p partition by fsck.erofs. Using mount loop"
+                    echo "Couldn't extract $p partition via 7z. Using mount loop"
                     $sudo_cmd mount -o loop -t auto "$p".img "$p"
                     mkdir "${p}_"
                     $sudo_cmd cp -rf "${p}/"* "${p}_"
