@@ -122,7 +122,7 @@ for p in $PARTITIONS; do
         echo "Trying to extract $p partition via fsck.erofs."
         "$PROJECT_DIR"/Firmware_extractor/tools/Linux/bin/fsck.erofs --extract="$p" "$p".img
         # Deletes images if they were correctly extracted via fsck.erofs
-        if [ -d "$p" ]; then
+        if [[ -d "$p" ]] && [[ $(ls "$p") != '' ]]; then
             rm "$p".img > /dev/null 2>&1
         else
         # Uses 7z if images could not be extracted via fsck.erofs
