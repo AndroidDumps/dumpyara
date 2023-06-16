@@ -27,4 +27,4 @@ fi
 # Create virtual environment and install packages
 python3 -m venv .venv
 source .venv/bin/activate
-"$PIP" install backports.lzma extract-dtb protobuf pycrypto docopt zstandard twrpdtgen
+"$PIP" install aospdtgen backports.lzma extract-dtb protobuf pycrypto docopt zstandard
