@@ -226,6 +226,10 @@ manufacturer=$(echo "$manufacturer" | tr '[:upper:]' '[:lower:]' | tr -dc '[:pri
 printf "# %s\n- manufacturer: %s\n- platform: %s\n- codename: %s\n- flavor: %s\n- release: %s\n- id: %s\n- incremental: %s\n- tags: %s\n- fingerprint: %s\n- is_ab: %s\n- brand: %s\n- branch: %s\n- repo: %s\n" "$description" "$manufacturer" "$platform" "$codename" "$flavor" "$release" "$id" "$incremental" "$tags" "$fingerprint" "$is_ab" "$brand" "$branch" "$repo" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/README.md
 cat "$PROJECT_DIR"/working/"${UNZIP_DIR}"/README.md
 
+# Delete all existing symlinks to avoid not found errors
+echo "Deleting symlinks"
+find "$PROJECT_DIR"/working/"${UNZIP_DIR}" -type l -delete
+
 # Generate AOSP device tree
 if python3 -c "import aospdtgen"; then
     echo "aospdtgen installed, generating device tree"
