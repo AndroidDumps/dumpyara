@@ -72,11 +72,6 @@ if [[ -d "$PROJECT_DIR/Firmware_extractor" ]]; then
 else
     git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "$PROJECT_DIR"/Firmware_extractor
 fi
-if [[ -d "$PROJECT_DIR/mkbootimg_tools" ]]; then
-    git -C "$PROJECT_DIR"/mkbootimg_tools pull --recurse-submodules
-else
-    git clone -q https://github.com/carlitros900/mkbootimg_tools "$PROJECT_DIR/mkbootimg_tools"
-fi
 if [[ -d "$PROJECT_DIR/vmlinux-to-elf" ]]; then
     git -C "$PROJECT_DIR"/vmlinux-to-elf pull --recurse-submodules
 else
@@ -86,33 +81,156 @@ fi
 # extract rom via Firmware_extractor
 [[ ! -d "$1" ]] && bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "$PROJECT_DIR"/input/"${FILE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
 
-# Extract boot.img
+# Set path for tools
+UNPACKBOOTIMG="${PROJECT_DIR}"/Firmware_extractor/tools/Linux/bin/unpackbootimg
+KALLSYMS_FINDER="${PROJECT_DIR}"/vmlinux-to-elf/vmlinux_to_elf/kallsyms_finder.py
+VMLINUX_TO_ELF="${PROJECT_DIR}"/vmlinux-to-elf/vmlinux_to_elf/main.py
+
+# Extract 'boot.img'
 if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
-    extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootimg > /dev/null # Extract boot
-    bash "$PROJECT_DIR"/mkbootimg_tools/mkboot "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot > /dev/null 2>&1
+    # Set a variable for each path
+    ## Image
+    IMAGE=${PROJECT_DIR}/working/${UNZIP_DIR}/boot.img
+
+    ## Output(s)
+    OUTPUT=${PROJECT_DIR}/working/${UNZIP_DIR}/boot
+
+    # Create necessary directories
+    mkdir -p "${OUTPUT}/dtb"
+    mkdir -p "${OUTPUT}/dts"
+
+    # Extract 'boot.img' content(s)
+    "${UNPACKBOOTIMG}" -i "${IMAGE}" -o "${OUTPUT}" > /dev/null 2>&1
     echo 'boot extracted'
-    # extract-ikconfig
-    [[ ! -e "${PROJECT_DIR}"/extract-ikconfig ]] && curl https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-ikconfig > ${PROJECT_DIR}/extract-ikconfig
-    bash "${PROJECT_DIR}"/extract-ikconfig "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/ikconfig
-    # vmlinux-to-elf
+
+    # Extract 'dtb' and decompile then
+    extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
+    rm -rf "${OUTPUT}/dtb/00_kernel"
+
+    ## Check whether device-tree blobs were extracted or not
+    if [ "$(find ${OUTPUT_DTB} -name "*.dtb")" ]; then
+        for dtb in $(find "${OUTPUT_DTB}" -type f); do
+            dtc -q -I dtb -O dts "${dtb}" >> "${OUTPUT}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
+        done
+        echo 'boot (dtb, dts) extracted'
+    else
+        ## Extraction failed, device-tree resources are probably somewhere else.
+        rm -rf "${OUTPUT}/dtb" \
+               "${OUTPUT}/dts"
+    fi
+
+    # Run 'extract-ikconfig'
+    [[ ! -e "${PROJECT_DIR}"/extract-ikconfig ]] && curl https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-ikconfig > "${PROJECT_DIR}"/extract-ikconfig
+    bash "${PROJECT_DIR}"/extract-ikconfig "${IMAGE}" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/ikconfig
+
+    # Run 'vmlinux-to-elf'
     mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE
-    python3 "${PROJECT_DIR}"/vmlinux-to-elf/vmlinux_to_elf/kallsyms_finder.py "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot_kallsyms.txt 2>&1
+    python3 "${KALLSYMS_FINDER}" "${IMAGE}" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot_kallsyms.txt 2>&1
     echo 'boot_kallsyms.txt generated'
-    python3 "${PROJECT_DIR}"/vmlinux-to-elf/vmlinux_to_elf/main.py "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot.elf > /dev/null 2>&1
+    python3 "${VMLINUX_TO_ELF}" "${IMAGE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot.elf > /dev/null 2>&1
     echo 'boot.elf generated'
 fi
 
-if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img ]]; then
-    extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo > /dev/null # Extract dtbo
-    echo 'dtbo extracted'
+# Extract 'vendor_boot'
+if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_boot.img ]]; then
+    # Set a variable for each path
+    ## Image
+    IMAGE=${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_boot.img
+
+    ## Output(s)
+    OUTPUT=${PROJECT_DIR}/working/${UNZIP_DIR}/boot
+
+    # Create necessary directories
+    mkdir -p "${OUTPUT}/dtb"
+    mkdir -p "${OUTPUT}/dts"
+
+    # Extract 'vendor_boot.img' content(s)
+    "${UNPACKBOOTIMG}" -i "${IMAGE}" -o "${OUTPUT}" > /dev/null 2>&1
+    echo 'vendor_boot extracted'
+
+    # Extract 'dtb' and decompile then
+    extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
+
+    ## Check whether device-tree blobs were extracted or not
+    if [ "$(find "${OUTPUT}/dtb" -name "*.dtb")" ]; then
+        for dtb in $(find "${OUTPUT}/dtb" -type f); do
+            dtc -q -I dtb -O dts "${dtb}" >> "${OUTPUT}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
+        done
+        echo 'vendor_boot (dtb, dts) extracted'
+    else
+        ## Extraction failed, device-tree resources are probably somewhere else.
+        rm -rf "${OUTPUT}/dtb" \
+               "${OUTPUT}/dts"
+    fi
 fi
 
-# Extract dts
-mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootdts
-dtb_list=$(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootimg -name '*.dtb' -type f -printf '%P\n' | sort)
-for dtb_file in $dtb_list; do
-    dtc -I dtb -O dts -o "$(echo "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootdts/"$dtb_file" | sed -r 's|.dtb|.dts|g')" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootimg/"$dtb_file" > /dev/null 2>&1
-done
+# Extract 'vendor_kernel_boot'
+if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img ]]; then
+    # Set a variable for each path
+    ## Image
+    IMAGE=${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot.img
+
+    ## Output(s)
+    OUTPUT=${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot
+
+    # Create necessary directories
+    mkdir -p "${OUTPUT}/dtb"
+    mkdir -p "${OUTPUT}/dts"
+
+    # Extract 'vendor_boot.img' content(s)
+    "${UNPACKBOOTIMG}" -i "${IMAGE}" -o "${OUTPUT}" > /dev/null 2>&1
+    echo 'vendor_kernel_boot extracted'
+
+    # Extract 'dtb' and decompile then
+    extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
+    rm -rf "${OUTPUT}/dtb/00_kernel"
+
+    ## Check whether device-tree blobs were extracted or not
+    if [ "$(find "${OUTPUT}/dtb" -name "*.dtb")" ]; then
+        for dtb in $(find "${OUTPUT}/dtb" -type f); do
+            dtc -q -I dtb -O dts "${dtb}" >> "${OUTPUT}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
+        done
+        echo 'vendor_kernel_boot (dtb, dts) extracted'
+    else
+        # Extraction failed, device-tree resources are probably somewhere else.
+        rm -rf "${OUTPUT}/dtb" \
+               "${OUTPUT}/dts"
+    fi
+fi
+
+# Extract 'init_boot'
+if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/init_boot.img ]]; then
+    # Set a variable for each path
+    ## Image
+    IMAGE=${PROJECT_DIR}/working/${UNZIP_DIR}/init_boot.img
+
+    ## Output(s)
+    OUTPUT=${PROJECT_DIR}/working/${UNZIP_DIR}/init_boot
+
+    # Extract 'init_boot.img' content(s)
+    "${UNPACKBOOTIMG}" -i "${IMAGE}" -o "${OUTPUT}" > /dev/null 2>&1
+    echo 'init_boot extracted'
+fi
+
+if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img ]]; then
+    # Set a variable for each path
+    ## Image
+    IMAGE=${PROJECT_DIR}/working/${UNZIP_DIR}/dtbo.img
+
+    ## Output(s)
+    OUTPUT=${PROJECT_DIR}/working/${UNZIP_DIR}/dtbo
+
+    # Create necessary directories
+    mkdir -p "${OUTPUT}/dts"
+
+    # Extract 'dtb' and decompile them
+    extract-dtb "${IMAGE}" -o "${OUTPUT}" > /dev/null
+    rm -rf "${OUTPUT}/00_kernel"
+    for dtb in $(find "${PROJECT_DIR}/working/${UNZIP_DIR}/dtbo" -type f -name "*.dtb"); do
+        dtc -q -I dtb -O dts "${dtb}" >> "${OUTPUT}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
+    done
+    echo 'dtbo extracted'
+fi
 
 # extract PARTITIONS
 cd "$PROJECT_DIR"/working/"${UNZIP_DIR}" || exit
