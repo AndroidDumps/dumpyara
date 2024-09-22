@@ -99,7 +99,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
     # Extract 'dtb' and decompile then
     extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb > /dev/null
     rm -rf "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb/00_kernel
-    if [ $(ls "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb) ]; then
+    if [ "$(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb -name "*.dtb)" ]; then
         for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb); do
             dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
         done
@@ -134,7 +134,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_boot.img ]]; then
 
     # Extract 'dtb' and decompile then
     extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_boot/dtb > /dev/null
-    if [ $(ls "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_boot/dtb) ]; then
+    if [ "$(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_boot/dtb -name "*.dtb")" ]; then
         for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_boot/dtb); do
             dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_boot/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
         done
@@ -159,7 +159,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img ]]; then
     # Extract 'dtb' and decompile then
     extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb > /dev/null
     rm -rf "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb/00_kernel
-    if [ $(ls "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb) ]; then
+    if [ "$(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb -name *.dtb)" ]; then
         for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb); do
             dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
         done
