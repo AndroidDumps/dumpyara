@@ -81,15 +81,22 @@ fi
 # extract rom via Firmware_extractor
 [[ ! -d "$1" ]] && bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "$PROJECT_DIR"/input/"${FILE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
 
-# Extract boot.img
+# Extract 'boot.img'
 if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
-    extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootimg > /dev/null # Extract boot
-    bash "$PROJECT_DIR"/mkbootimg_tools/mkboot "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot > /dev/null 2>&1
+    # Create necessary directories
+    mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dtb"
+    mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dts"
+
+    # Extract 'boot.img' content, alongside device-tree blobs
+    "${PROJECT_DIR}/Firmware_extractor/tools/Linux/bin/unpackbootimg" -i "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot > /dev/null 2>&1
+    extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb > /dev/null
     echo 'boot extracted'
-    # extract-ikconfig
+
+    # Run 'extract-ikconfig'
     [[ ! -e "${PROJECT_DIR}"/extract-ikconfig ]] && curl https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-ikconfig > ${PROJECT_DIR}/extract-ikconfig
     bash "${PROJECT_DIR}"/extract-ikconfig "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/ikconfig
-    # vmlinux-to-elf
+
+    # Run 'vmlinux-to-elf'
     mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE
     python3 "${PROJECT_DIR}"/vmlinux-to-elf/vmlinux_to_elf/kallsyms_finder.py "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot_kallsyms.txt 2>&1
     echo 'boot_kallsyms.txt generated'
