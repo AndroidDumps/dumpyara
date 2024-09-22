@@ -169,6 +169,13 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img ]]; then
     fi
 fi
 
+# Extract 'init_boot'
+if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/init_boot.img ]]; then
+    # Extract 'init_boot.img' content(s)
+    "${UNPACKBOOTIMG}" -i "$PROJECT_DIR"/working/"${UNZIP_DIR}"/init_boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/init_boot > /dev/null 2>&1
+    echo 'init_boot extracted'
+fi
+
 if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img ]]; then
     # Create necessary directories
     mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo/dts
