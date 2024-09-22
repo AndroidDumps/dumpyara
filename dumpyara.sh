@@ -98,10 +98,16 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
 
     # Extract 'dtb' and decompile then
     extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb > /dev/null
-    for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb); do
-        dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
-    done
-    echo 'boot (dtb, dts) extracted'
+    if [ $(ls "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb) ]; then
+        for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb); do
+            dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
+        done
+        echo 'boot (dtb, dts) extracted'
+    else
+        # Extraction failed, device-tree resources are probably somewhere else.
+        rm -rf "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dtb"
+        rm -rf "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dts"
+    fi
 
     # Run 'extract-ikconfig'
     [[ ! -e "${PROJECT_DIR}"/extract-ikconfig ]] && curl https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-ikconfig > ${PROJECT_DIR}/extract-ikconfig
@@ -116,7 +122,15 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
 fi
 
 if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img ]]; then
-    extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo > /dev/null # Extract dtbo
+    # Create necessary directories
+    mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo/dts
+
+    # Extract 'dtb' and decompile them
+    extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo > /dev/null
+    for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo); do
+        dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/dtbo/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
+    done
+
     echo 'dtbo extracted'
 fi
 
