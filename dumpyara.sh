@@ -92,10 +92,16 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
     mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dtb"
     mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dts"
 
-    # Extract 'boot.img' content, alongside device-tree blobs
+    # Extract 'boot.img' content(s)
     "${UNPACKBOOTIMG}" -i "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot > /dev/null 2>&1
-    extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb > /dev/null
     echo 'boot extracted'
+
+    # Extract 'dtb' and decompile then
+    extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb > /dev/null
+    for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb); do
+        dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
+    done
+    echo 'boot (dtb, dts) extracted'
 
     # Run 'extract-ikconfig'
     [[ ! -e "${PROJECT_DIR}"/extract-ikconfig ]] && curl https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-ikconfig > ${PROJECT_DIR}/extract-ikconfig
@@ -113,13 +119,6 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img ]]; then
     extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo > /dev/null # Extract dtbo
     echo 'dtbo extracted'
 fi
-
-# Extract dts
-mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootdts
-dtb_list=$(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootimg -name '*.dtb' -type f -printf '%P\n' | sort)
-for dtb_file in $dtb_list; do
-    dtc -I dtb -O dts -o "$(echo "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootdts/"$dtb_file" | sed -r 's|.dtb|.dts|g')" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootimg/"$dtb_file" > /dev/null 2>&1
-done
 
 # extract PARTITIONS
 cd "$PROJECT_DIR"/working/"${UNZIP_DIR}" || exit
