@@ -72,11 +72,6 @@ if [[ -d "$PROJECT_DIR/Firmware_extractor" ]]; then
 else
     git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "$PROJECT_DIR"/Firmware_extractor
 fi
-if [[ -d "$PROJECT_DIR/mkbootimg_tools" ]]; then
-    git -C "$PROJECT_DIR"/mkbootimg_tools pull --recurse-submodules
-else
-    git clone -q https://github.com/carlitros900/mkbootimg_tools "$PROJECT_DIR/mkbootimg_tools"
-fi
 if [[ -d "$PROJECT_DIR/vmlinux-to-elf" ]]; then
     git -C "$PROJECT_DIR"/vmlinux-to-elf pull --recurse-submodules
 else
