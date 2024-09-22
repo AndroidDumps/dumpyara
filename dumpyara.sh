@@ -98,6 +98,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
 
     # Extract 'dtb' and decompile then
     extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb > /dev/null
+    rm -rf "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb/00_kernel
     if [ $(ls "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb) ]; then
         for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/dtb); do
             dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/boot/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
@@ -157,6 +158,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img ]]; then
 
     # Extract 'dtb' and decompile then
     extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb > /dev/null
+    rm -rf "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb/00_kernel
     if [ $(ls "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb) ]; then
         for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb); do
             dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
@@ -182,6 +184,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img ]]; then
 
     # Extract 'dtb' and decompile them
     extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo > /dev/null
+    rm -rf "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo/00_kernel
     for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo); do
         dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/dtbo/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
     done
