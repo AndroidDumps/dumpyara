@@ -145,6 +145,30 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_boot.img ]]; then
     fi
 fi
 
+# Extract 'vendor_kernel_boot'
+if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img ]]; then
+    # Create necessary directories
+    mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot/dtb"
+    mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot/dts"
+
+    # Extract 'vendor_boot.img' content(s)
+    "${UNPACKBOOTIMG}" -i "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot > /dev/null 2>&1
+    echo 'vendor_kernel_boot extracted'
+
+    # Extract 'dtb' and decompile then
+    extract-dtb "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb > /dev/null
+    if [ $(ls "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb) ]; then
+        for dtb in $(find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot/dtb); do
+            dtc -q -I dtb -O dts "${dtb}" >> "${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
+        done
+        echo 'vendor_kernel_boot (dtb, dts) extracted'
+    else
+        # Extraction failed, device-tree resources are probably somewhere else.
+        rm -rf "${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot/dtb"
+        rm -rf "${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot/dts"
+    fi
+fi
+
 if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img ]]; then
     # Create necessary directories
     mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo/dts
