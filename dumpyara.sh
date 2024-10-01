@@ -82,7 +82,7 @@ fi
 [[ ! -d "$1" ]] && bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "$PROJECT_DIR"/input/"${FILE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
 
 # Set path for tools
-UNPACKBOOTIMG="${PROJECT_DIR}"/Firmware_extractor/tools/Linux/bin/unpackbootimg
+UNPACKBOOTIMG="${PROJECT_DIR}"/Firmware_extractor/tools/unpackbootimg
 KALLSYMS_FINDER="${PROJECT_DIR}"/vmlinux-to-elf/vmlinux_to_elf/kallsyms_finder.py
 VMLINUX_TO_ELF="${PROJECT_DIR}"/vmlinux-to-elf/vmlinux_to_elf/main.py
 
@@ -238,7 +238,7 @@ for p in $PARTITIONS; do
     # Try to extract images via fsck.erofs
     if [ -f $p.img ] && [ $p != "modem" ]; then
         echo "Trying to extract $p partition via fsck.erofs."
-        "$PROJECT_DIR"/Firmware_extractor/tools/Linux/bin/fsck.erofs --extract="$p" "$p".img
+        "$PROJECT_DIR"/Firmware_extractor/tools/fsck.erofs --extract="$p" "$p".img
         # Deletes images if they were correctly extracted via fsck.erofs
         if [ -d "$p" ]; then
             rm "$p".img > /dev/null 2>&1
