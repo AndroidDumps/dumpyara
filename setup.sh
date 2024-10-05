@@ -6,8 +6,11 @@ if command -v sudo > /dev/null 2>&1; then
 elif command -v doas > /dev/null 2>&1; then
     sudo_cmd="doas"
 else
-    echo "Neither sudo nor doas found. Please install one of them."
-    exit 1
+    function su_cmd() {
+    su -c "$*"
+    }
+    sudo_cmd=su_cmd
+    echo "Warning: Neither sudo nor doas found; resorting to su."
 fi
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
