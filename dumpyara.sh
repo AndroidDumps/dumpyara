@@ -337,7 +337,7 @@ description=$(grep -oP "(?<=^ro.build.description=).*" -hs {system,system/system
 is_ab=$(grep -oP "(?<=^ro.build.ab_update=).*" -hs {system,system/system,vendor}/build*.prop | head -1)
 [[ -z "${is_ab}" ]] && is_ab="false"
 branch=$(echo "$description" | tr ' ' '-')
-repo=$(echo "$brand"_"$codename"_dump | tr '[:upper:]' '[:lower:]')
+repo=$(echo "$brand"_"$codename"_dump | tr '[:upper:]' '[:lower:]' | tr -d '\r\n')
 platform=$(echo "$platform" | tr '[:upper:]' '[:lower:]' | tr -dc '[:print:]' | tr '_' '-' | cut -c 1-35)
 top_codename=$(echo "$codename" | tr '[:upper:]' '[:lower:]' | tr -dc '[:print:]' | tr '_' '-' | cut -c 1-35)
 manufacturer=$(echo "$manufacturer" | tr '[:upper:]' '[:lower:]' | tr -dc '[:print:]' | tr '_' '-' | cut -c 1-35)
