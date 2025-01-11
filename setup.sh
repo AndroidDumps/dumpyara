@@ -11,7 +11,7 @@ else
 fi
 
 # 'apt' (Debian)
-if [[ "$(command -v apt)" != "" ]]; then
+if command -v apt > /dev/null 2>&1; then
     # Perform repositories updates to prevent dead mirrors
     echo "[INFO] Updating repositories..."
     $sudo_cmd apt update > /dev/null 2>&1
@@ -23,7 +23,7 @@ if [[ "$(command -v apt)" != "" ]]; then
             echo "[ERROR] Failed installing '${package}'."
     done
 # 'dnf' (Fedora)
-elif [[ "$(command -v dnf)" != "" ]]; then
+elif command -v dnf > /dev/null 2>&1; then
     # Install required packages in form of a 'for' loop
     for package in unace unrar zip unzip sharutils uudeview arj cabextract file-roller dtc python3-pip brotli axel aria2 detox cpio lz4 python3-devel xz-devel p7zip p7zip-plugins; do
         echo "[INFO] Installing '${package}'..."
@@ -31,7 +31,7 @@ elif [[ "$(command -v dnf)" != "" ]]; then
             echo "[ERROR] Failed installing '${package}'."
     done
 # 'pacman' (Arch Linux)
-elif [[ "$(command -v pacman)" != "" ]]; then
+elif command -v pacman > /dev/null 2>&1; then
     # Install required packages in form of a 'for' loop
     for package in unace unrar zip unzip p7zip sharutils uudeview arj cabextract file-roller dtc python-pip brotli axel gawk aria2 detox cpio lz4; do
         echo "[INFO] Installing '${package}'..."
