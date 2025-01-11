@@ -72,19 +72,13 @@ if [[ -d "$PROJECT_DIR/Firmware_extractor" ]]; then
 else
     git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "$PROJECT_DIR"/Firmware_extractor
 fi
-if [[ -d "$PROJECT_DIR/vmlinux-to-elf" ]]; then
-    git -C "$PROJECT_DIR"/vmlinux-to-elf pull --recurse-submodules
-else
-    git clone -q https://github.com/marin-m/vmlinux-to-elf "$PROJECT_DIR/vmlinux-to-elf"
-fi
 
 # extract rom via Firmware_extractor
 [[ ! -d "$1" ]] && bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "$PROJECT_DIR"/input/"${FILE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
 
 # Set path for tools
 UNPACKBOOTIMG="${PROJECT_DIR}"/Firmware_extractor/tools/unpackbootimg
-KALLSYMS_FINDER="${PROJECT_DIR}"/vmlinux-to-elf/vmlinux_to_elf/kallsyms_finder.py
-VMLINUX_TO_ELF="${PROJECT_DIR}"/vmlinux-to-elf/vmlinux_to_elf/main.py
+VMLINUX_TO_ELF="uvx --from git+https://github.com/marin-m/vmlinux-to-elf@da14e789596d493f305688e221e9e34ebf63cbb8"
 
 # Extract 'boot.img'
 if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
@@ -125,10 +119,14 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
 
     # Run 'vmlinux-to-elf'
     mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE
-    python3 "${KALLSYMS_FINDER}" "${IMAGE}" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot_kallsyms.txt 2>&1
-    echo 'boot_kallsyms.txt generated'
-    python3 "${VMLINUX_TO_ELF}" "${IMAGE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot.elf > /dev/null 2>&1
-    echo 'boot.elf generated'
+
+    echo "[INFO] Generating 'kallsyms.txt'..."
+    ${VMLINUX_TO_ELF} kallsyms-finder "${IMAGE}" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot_kallsyms.txt 2>&1 || \
+        echo "[ERROR] Failed to generate 'boot_kallsyms.txt'"
+
+    echo "[INFO] Extracting 'boot.elf'..."
+    ${VMLINUX_TO_ELF} vmlinux-to-elf "${IMAGE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot.elf > /dev/null 2>&1 ||
+        echo "[ERROR] Failed to generate 'boot.elf'"
 fi
 
 # Extract 'vendor_boot'
