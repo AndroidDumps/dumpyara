@@ -10,12 +10,34 @@ else
     exit 1
 fi
 
+# 'apt' (Debian)
 if [[ "$(command -v apt)" != "" ]]; then
-    $sudo_cmd apt install unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract device-tree-compiler liblzma-dev python3-pip brotli liblz4-tool axel gawk aria2 detox cpio rename liblz4-dev curl python3-venv -y
+    # Perform repositories updates to prevent dead mirrors
+    echo "[INFO] Updating repositories..."
+    $sudo_cmd apt update > /dev/null 2>&1
+
+    # Install required packages in form of a 'for' loop
+    for package in unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract device-tree-compiler liblzma-dev python3-pip brotli liblz4-tool axel gawk aria2 detox cpio rename liblz4-dev curl python3-venv; do
+        echo "[INFO] Installing '${package}'..."
+        $sudo_cmd apt install  -y "${package}" > /dev/null 2>&1 || \
+            echo "[ERROR] Failed installing '${package}'."
+    done
+# 'dnf' (Fedora)
 elif [[ "$(command -v dnf)" != "" ]]; then
-    $sudo_cmd dnf install -y unace unrar zip unzip sharutils uudeview arj cabextract file-roller dtc python3-pip brotli axel aria2 detox cpio lz4 python3-devel xz-devel p7zip p7zip-plugins
+    # Install required packages in form of a 'for' loop
+    for package in unace unrar zip unzip sharutils uudeview arj cabextract file-roller dtc python3-pip brotli axel aria2 detox cpio lz4 python3-devel xz-devel p7zip p7zip-plugins; do
+        echo "[INFO] Installing '${package}'..."
+        $sudo_cmd dnf install -y "${package}" > /dev/null 2>&1 || \
+            echo "[ERROR] Failed installing '${package}'."
+    done
+# 'pacman' (Arch Linux)
 elif [[ "$(command -v pacman)" != "" ]]; then
-    $sudo_cmd pacman -Sy --noconfirm --needed unace unrar zip unzip p7zip sharutils uudeview arj cabextract file-roller dtc python-pip brotli axel gawk aria2 detox cpio lz4
+    # Install required packages in form of a 'for' loop
+    for package in unace unrar zip unzip p7zip sharutils uudeview arj cabextract file-roller dtc python-pip brotli axel gawk aria2 detox cpio lz4; do
+        echo "[INFO] Installing '${package}'..."
+        $sudo_cmd pacman -Sy --noconfirm --needed "${package}" > /dev/null 2>&1 || \
+            echo "[ERROR] Failed installing '${package}'."
+    done
 fi
 PIP=pip3
 
