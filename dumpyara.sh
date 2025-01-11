@@ -121,11 +121,11 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
     mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE
 
     echo "[INFO] Generating 'kallsyms.txt'..."
-    ${VMLINUX_TO_ELF} kallsyms-finder "${IMAGE}" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot_kallsyms.txt 2>&1 || \
+    ${VMLINUX_TO_ELF} kallsyms-finder "${IMAGE}" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/boot_kallsyms.txt 2>&1 || \
         echo "[ERROR] Failed to generate 'boot_kallsyms.txt'"
 
     echo "[INFO] Extracting 'boot.elf'..."
-    ${VMLINUX_TO_ELF} vmlinux-to-elf "${IMAGE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE/boot.elf > /dev/null 2>&1 ||
+    ${VMLINUX_TO_ELF} vmlinux-to-elf "${IMAGE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/boot.elf > /dev/null 2>&1 ||
         echo "[ERROR] Failed to generate 'boot.elf'"
 fi
 
