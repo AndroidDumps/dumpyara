@@ -2,7 +2,7 @@
 
 [[ $# = 0 ]] && echo "No Input" && exit 1
 
-OS=`uname`
+OS=$(uname)
 if [ "$OS" = 'Darwin' ]; then
     export LC_CTYPE=C
 fi
@@ -37,13 +37,13 @@ fi
 if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
     # 1DRV URL DIRECT LINK IMPLEMENTATION
     if echo "$1" | grep -e '1drv.ms' > /dev/null; then
-        URL=`curl -I "$1" -s | grep location | sed -e "s/redir/download/g" | sed -e "s/location: //g"`
+        URL=$(curl -I "$1" -s | grep location | sed -e "s/redir/download/g" | sed -e "s/location: //g")
     else
         URL=$1
     fi
     cd "$PROJECT_DIR"/input || exit
     { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --content-disposition --show-progress --progress=bar:force "${URL}" || exit 1; }
-    if [[ ! -f "$(echo ${URL##*/} | inline-detox)" ]]; then
+    if [[ ! -f "$(echo "${URL##*/}" | inline-detox)" ]]; then
         URL=$(wget --server-response --spider "${URL}" 2>&1 | awk -F"filename=" '{print $2}')
     fi
     detox "${URL##*/}"
@@ -53,8 +53,8 @@ else
 fi
 
 ORG=AndroidDumps #your GitHub org name
-FILE=$(echo ${URL##*/} | inline-detox)
-EXTENSION=$(echo ${URL##*.} | inline-detox)
+FILE=$(echo "${URL##*/}" | inline-detox)
+EXTENSION=$(echo "${URL##*.}" | inline-detox)
 UNZIP_DIR=${FILE/.$EXTENSION/}
 PARTITIONS="system systemex system_ext system_other vendor cust odm odm_ext oem factory product modem xrom oppo_product opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap my_custom my_manifest my_carrier my_region my_bigball my_version special_preload vendor_dlkm odm_dlkm system_dlkm mi_ext"
 
@@ -68,7 +68,7 @@ fi
 
 # clone other repo's
 if [[ -d "$PROJECT_DIR/Firmware_extractor" ]]; then
-    git -C "$PROJECT_DIR"/Firmware_extractor pull --recurse-submodules
+    git -C "$PROJECT_DIR"/Firmware_extractor pull --recurse-submodules --rebase
 else
     git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "$PROJECT_DIR"/Firmware_extractor
 fi
@@ -108,7 +108,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
     rm -rf "${OUTPUT}/dtb/00_kernel"
 
     ## Check whether device-tree blobs were extracted or not
-    if [ "$(find ${OUTPUT_DTB} -name "*.dtb")" ]; then
+    if [ "$(find "${OUTPUT_DTB}" -name "*.dtb")" ]; then
         for dtb in $(find "${OUTPUT_DTB}" -type f); do
             dtc -q -I dtb -O dts "${dtb}" >> "${OUTPUT}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
         done
@@ -236,7 +236,7 @@ fi
 cd "$PROJECT_DIR"/working/"${UNZIP_DIR}" || exit
 for p in $PARTITIONS; do
     # Try to extract images via fsck.erofs
-    if [ -f $p.img ] && [ $p != "modem" ]; then
+    if [ -f "$p".img ] && [ "$p" != "modem" ]; then
         echo "Trying to extract $p partition via fsck.erofs."
         "$PROJECT_DIR"/Firmware_extractor/tools/fsck.erofs --extract="$p" "$p".img
         # Deletes images if they were correctly extracted via fsck.erofs
@@ -247,8 +247,7 @@ for p in $PARTITIONS; do
             if [[ -e "$p.img" ]]; then
                 mkdir "$p" 2> /dev/null || rm -rf "${p:?}"/*
                 echo "Extraction via fsck.erofs failed, extracting $p partition via 7z"
-                7z x "$p".img -y -o"$p"/ > /dev/null 2>&1
-                if [ $? -eq 0 ]; then
+                if 7z x "$p".img -y -o"$p"/ > /dev/null 2>&1; then
                     rm "$p".img > /dev/null 2>&1
                 else
                     echo "Couldn't extract $p partition via 7z. Using mount loop"
@@ -257,8 +256,7 @@ for p in $PARTITIONS; do
                     $sudo_cmd cp -rf "${p}/"* "${p}_"
                     $sudo_cmd umount "${p}"
                     $sudo_cmd cp -rf "${p}_/"* "${p}"
-                    $sudo_cmd rm -rf "${p}_"
-                    if [ $? -eq 0 ]; then
+                    if $sudo_cmd rm -rf "${p}_"; then
                         rm -fv "$p".img > /dev/null 2>&1
                     else
                         echo "Couldn't extract $p partition. It might use an unsupported filesystem."
@@ -282,9 +280,6 @@ if [ -e "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor/build.prop ]; then
     strings "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor/build.prop | grep "ro.vendor.build.date.utc" | sed "s|ro.vendor.build.date.utc|require version-vendor|g" >> "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt
 fi
 sort -u -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt
-
-# set variables
-ls system/build*.prop 2> /dev/null || ls system/system/build*.prop 2> /dev/null || { echo "No system build*.prop found, pushing cancelled!" && exit; }
 
 # 'flavor' property (e.g. caiman-user)
 flavor=$(rg -m1 -INoP --no-messages "(?<=^ro.build.flavor=).*" {vendor,system,system/system}/build.prop)
@@ -468,7 +463,7 @@ chmod -R u+rwX ./* #ensure final permissions
 find "$PROJECT_DIR"/working/"${UNZIP_DIR}" -type f -printf '%P\n' | sort | grep -v ".git/" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/all_files.txt
 
 if [[ -n $GIT_OAUTH_TOKEN ]]; then
-    GITPUSH=(git push https://"$GIT_OAUTH_TOKEN"@github.com/$ORG/"${repo,,}".git "$branch")
+    GITPUSH=(git push https://"$GIT_OAUTH_TOKEN"@github.com/"$ORG"/"${repo,,}".git "$branch")
     curl --silent --fail "https://raw.githubusercontent.com/$ORG/$repo/$branch/all_files.txt" 2> /dev/null && echo "Firmware already dumped!" && exit 1
     git init
     if [[ -z "$(git config --get user.email)" ]]; then
