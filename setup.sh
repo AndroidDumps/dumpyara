@@ -17,7 +17,7 @@ if command -v apt > /dev/null 2>&1; then
     $sudo_cmd apt update > /dev/null 2>&1
 
     # Install required packages in form of a 'for' loop
-    for package in unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract device-tree-compiler liblzma-dev python3-pip brotli liblz4-tool axel gawk aria2 detox cpio rename liblz4-dev curl python3-venv; do
+    for package in unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract device-tree-compiler liblzma-dev python3-pip brotli liblz4-tool axel gawk aria2 detox cpio rename liblz4-dev curl python3-venv ripgrep; do
         echo "[INFO] Installing '${package}'..."
         $sudo_cmd apt install  -y "${package}" > /dev/null 2>&1 || \
             echo "[ERROR] Failed installing '${package}'."
@@ -25,7 +25,7 @@ if command -v apt > /dev/null 2>&1; then
 # 'dnf' (Fedora)
 elif command -v dnf > /dev/null 2>&1; then
     # Install required packages in form of a 'for' loop
-    for package in unace unrar zip unzip sharutils uudeview arj cabextract file-roller dtc python3-pip brotli axel aria2 detox cpio lz4 python3-devel xz-devel p7zip p7zip-plugins; do
+    for package in unace unrar zip unzip sharutils uudeview arj cabextract file-roller dtc python3-pip brotli axel aria2 detox cpio lz4 python3-devel xz-devel p7zip p7zip-plugins ripgrep; do
         echo "[INFO] Installing '${package}'..."
         $sudo_cmd dnf install -y "${package}" > /dev/null 2>&1 || \
             echo "[ERROR] Failed installing '${package}'."
@@ -33,7 +33,7 @@ elif command -v dnf > /dev/null 2>&1; then
 # 'pacman' (Arch Linux)
 elif command -v pacman > /dev/null 2>&1; then
     # Install required packages in form of a 'for' loop
-    for package in unace unrar zip unzip p7zip sharutils uudeview arj cabextract file-roller dtc python-pip brotli axel gawk aria2 detox cpio lz4; do
+    for package in unace unrar zip unzip p7zip sharutils uudeview arj cabextract file-roller dtc python-pip brotli axel gawk aria2 detox cpio lz4 ripgrep; do
         echo "[INFO] Installing '${package}'..."
         $sudo_cmd pacman -Sy --noconfirm --needed "${package}" > /dev/null 2>&1 || \
             echo "[ERROR] Failed installing '${package}'."
