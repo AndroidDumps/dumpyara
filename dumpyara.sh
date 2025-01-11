@@ -104,7 +104,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
     echo 'boot extracted'
 
     # Extract 'dtb' and decompile then
-    extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
+    uvx -q extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
     rm -rf "${OUTPUT}/dtb/00_kernel"
 
     ## Check whether device-tree blobs were extracted or not
@@ -149,7 +149,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_boot.img ]]; then
     echo 'vendor_boot extracted'
 
     # Extract 'dtb' and decompile then
-    extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
+    uvx -q extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
 
     ## Check whether device-tree blobs were extracted or not
     if [ "$(find "${OUTPUT}/dtb" -name "*.dtb")" ]; then
@@ -182,7 +182,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img ]]; then
     echo 'vendor_kernel_boot extracted'
 
     # Extract 'dtb' and decompile then
-    extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
+    uvx -q extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
     rm -rf "${OUTPUT}/dtb/00_kernel"
 
     ## Check whether device-tree blobs were extracted or not
@@ -224,7 +224,7 @@ if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img ]]; then
     mkdir -p "${OUTPUT}/dts"
 
     # Extract 'dtb' and decompile them
-    extract-dtb "${IMAGE}" -o "${OUTPUT}" > /dev/null
+    uvx -q extract-dtb "${IMAGE}" -o "${OUTPUT}" > /dev/null
     rm -rf "${OUTPUT}/00_kernel"
     for dtb in $(find "${PROJECT_DIR}/working/${UNZIP_DIR}/dtbo" -type f -name "*.dtb"); do
         dtc -q -I dtb -O dts "${dtb}" >> "${OUTPUT}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
@@ -345,14 +345,11 @@ printf "# %s\n- manufacturer: %s\n- platform: %s\n- codename: %s\n- flavor: %s\n
 cat "$PROJECT_DIR"/working/"${UNZIP_DIR}"/README.md
 
 # Generate AOSP device tree
-if python3 -c "import aospdtgen"; then
-    echo "aospdtgen installed, generating device tree"
-    mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"
-    if python3 -m aospdtgen . --output "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"; then
-        echo "AOSP device tree successfully generated"
-    else
-        echo "Failed to generate AOSP device tree"
-    fi
+mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"
+if uvx aospdtgen . --output "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"; then
+    echo "AOSP device tree successfully generated"
+else
+    echo "Failed to generate AOSP device tree"
 fi
 
 # copy file names

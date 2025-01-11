@@ -44,4 +44,10 @@ PIP=pip3
 # Create virtual environment and install packages
 python3 -m venv .venv
 source .venv/bin/activate
-"$PIP" install aospdtgen backports.lzma extract-dtb protobuf pycryptodome docopt zstandard
+
+# Install 'uv' through pipx
+echo "[INFO] Installing 'uv'..."
+curl -LsSf https://astral.sh/uv/install.sh | sh > /dev/null 2>&1 
+
+# Finish
+echo "[INFO] Set-up finished. You may now execute 'dumpyara.sh'."
