@@ -33,14 +33,24 @@ else
     echo "GitHub token not found. Dumping just locally..."
 fi
 
+# List of xiaomi's domains to handle directly and replace with bn.d.miui.com
+xiaomi_bad_hosts=("bigota.d.miui.com" "hugeota.d.miui.com")
+
 # download or copy from local?
 if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
-    # 1DRV URL DIRECT LINK IMPLEMENTATION
-    if echo "$1" | grep -e '1drv.ms' > /dev/null; then
+    URL=$1
+    domain=$(echo "$URL" | awk -F[/:] '{print $4}')
+    
+    if [[ " ${xiaomi_bad_hosts[*]} " == *" $domain "* ]]; then
+        echo "The domain '$domain' has been detected in the provided URL. Switching to a faster mirror..."
+        URL=${URL//$domain/bn.d.miui.com}
+        echo "Firmware will be downloaded from: $URL"
+    elif echo "$1" | grep -e '1drv.ms' > /dev/null; then
         URL=$(curl -I "$1" -s | grep location | sed -e "s/redir/download/g" | sed -e "s/location: //g")
     else
         URL=$1
     fi
+    
     cd "$PROJECT_DIR"/input || exit
     { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --content-disposition --show-progress --progress=bar:force "${URL}" || exit 1; }
     if [[ ! -f "$(echo "${URL##*/}" | inline-detox)" ]]; then
