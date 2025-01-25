@@ -35,13 +35,55 @@ fi
 
 # download or copy from local?
 if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
-    # 1DRV URL DIRECT LINK IMPLEMENTATION
-    if echo "$1" | grep -e '1drv.ms' > /dev/null; then
-        URL=$(curl -I "$1" -s | grep location | sed -e "s/redir/download/g" | sed -e "s/location: //g")
-    else
-        URL=$1
-    fi
+    URL="$1"
+
+    # Override '${URL}' with best possible mirror of it
+    case "${URL}" in
+        # For Xiaomi: replace '${URL}' with (one of) the fastest mirror
+        *"d.miui.com"*)
+            # Do not run this loop in case we're already using one of the reccomended mirrors
+            if ! echo "${URL}" | rg -q 'cdnorg|bkt-sgp-miui-ota-update-alisgp'; then
+                # Set '${URL_ORIGINAL}' and '${FILE_PATH}' in case we might need to roll back
+                URL_ORIGINAL=$(echo "${URL}" | sed -E 's|(https://[^/]+).*|\1|')
+                FILE_PATH=$(echo ${URL#*d.miui.com/} | sed 's/?.*//')
+
+                # Array of different possible mirrors
+                MIRRORS=(
+                    "https://cdnorg.d.miui.com"
+                    "https://bkt-sgp-miui-ota-update-alisgp.oss-ap-southeast-1.aliyuncs.com"
+                    "https://bn.d.miui.com"
+                    "${URL_ORIGINAL}"
+                )
+
+                # Check back and forth for the best available mirror
+                for URLS in "${MIRRORS[@]}"; do
+                    # Change mirror's domain with one(s) from array
+                    URL=${URLS}/${FILE_PATH}
+
+                    # Be sure that the mirror is available. Once found, break the loop 
+                    if [ "$(curl -I -sS "${URL}" | head -n1 | cut -d' ' -f2)" == "404" ]; then
+                        echo "[ERROR] ${URLS} is not available. Trying with other mirror(s)..."
+                    else
+                        echo "[INFO] Found best available mirror."
+                        break
+                    fi
+                done
+            fi
+            ;;
+            # For Pixeldrain: replace the link with a direct one
+            *"pixeldrain.com/u"*)
+                echo "[INFO] Replacing with best available mirror."
+                URL="https://pd.cybar.xyz/${URL##*/}"
+            ;;
+            *"pixeldrain.com/d"*)
+                echo "[INFO] Replacing with direct download link."
+                URL="https://pixeldrain.com/api/filesystem/${URL##*/}"
+            ;;
+        esac
+    
+    # Download to the 'input/' directory
     cd "$PROJECT_DIR"/input || exit
+    echo "${URL}"
     { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --content-disposition --show-progress --progress=bar:force "${URL}" || exit 1; }
     if [[ ! -f "$(echo "${URL##*/}" | inline-detox)" ]]; then
         URL=$(wget --server-response --spider "${URL}" 2>&1 | awk -F"filename=" '{print $2}')
