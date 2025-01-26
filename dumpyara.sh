@@ -34,20 +34,6 @@ PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 # Create input & working directory if it does not exist
 mkdir -p "$PROJECT_DIR"/input "$PROJECT_DIR"/working
 
-# Determine which command to use for privilege escalation
-if command -v sudo > /dev/null 2>&1; then
-    sudo_cmd="sudo"
-elif command -v doas > /dev/null 2>&1; then
-    sudo_cmd="doas"
-else
-    LOGW "Neither 'sudo' nor 'doas' found; resorting to 'su'."
-    # Create a separated function in order to handle 'su'
-    su_cmd() { 
-        su -c "$*" 
-    }
-    sudo_cmd="su_cmd"
-fi
-
 # Activate virtual environment
 source .venv/bin/activate
 
@@ -125,7 +111,6 @@ ORG=AndroidDumps #your GitHub org name
 FILE=$(echo "${URL##*/}" | inline-detox)
 EXTENSION=$(echo "${URL##*.}" | inline-detox)
 UNZIP_DIR=${FILE/.$EXTENSION/}
-PARTITIONS="system systemex system_ext system_other vendor cust odm odm_ext oem factory product modem xrom oppo_product opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap my_custom my_manifest my_carrier my_region my_bigball my_version special_preload vendor_dlkm odm_dlkm system_dlkm mi_ext"
 
 if [[ -d "$1" ]]; then
     LOGI 'Directory detected. Copying...'
@@ -155,43 +140,52 @@ fi
 UNPACKBOOTIMG="${PROJECT_DIR}"/Firmware_extractor/tools/unpackbootimg
 VMLINUX_TO_ELF="uvx -q --from git+https://github.com/marin-m/vmlinux-to-elf@da14e789596d493f305688e221e9e34ebf63cbb8"
 EXTRACT_IKCONFIG="${PROJECT_DIR}"/extract-ikconfig
+FSCK_EROFS="${PROJECT_DIR}"/Firmware_extractor/tools/fsck.erofs
 
-# extract PARTITIONS
+# Initialize images extraction
 cd "$PROJECT_DIR"/working/"${UNZIP_DIR}" || exit
-for p in $PARTITIONS; do
-    # Try to extract images via fsck.erofs
-    if [ -f "$p".img ] && [ "$p" != "modem" ]; then
-        LOGI "Trying to extract $p partition via fsck.erofs."
-        "$PROJECT_DIR"/Firmware_extractor/tools/fsck.erofs --extract="$p" "$p".img
-        # Deletes images if they were correctly extracted via fsck.erofs
-        if [ -d "$p" ]; then
-            rm "$p".img > /dev/null 2>&1
-        else
-        # Uses 7z if images could not be extracted via fsck.erofs
-            if [[ -e "$p.img" ]]; then
-                mkdir "$p" 2> /dev/null || rm -rf "${p:?}"/*
-                LOGW "Extraction via fsck.erofs failed, extracting $p partition via 7z"
-                if 7z x "$p".img -y -o"$p"/ > /dev/null 2>&1; then
-                    rm "$p".img > /dev/null 2>&1
-                else
-                    LOGW "Couldn't extract $p partition via 7z. Using mount loop"
-                    $sudo_cmd mount -o loop -t auto "$p".img "$p"
-                    mkdir "${p}_"
-                    $sudo_cmd cp -rf "${p}/"* "${p}_"
-                    $sudo_cmd umount "${p}"
-                    $sudo_cmd cp -rf "${p}_/"* "${p}"
-                    if $sudo_cmd rm -rf "${p}_"; then
-                        rm -fv "$p".img > /dev/null 2>&1
-                    else
-                        LOGE "Couldn't extract $p partition. It might use an unsupported filesystem."
-                        echo "        For EROFS: make sure you're using Linux 5.4+ kernel."
-                        echo "        For F2FS: make sure you're using Linux 5.15+ kernel."
-                    fi
+
+# Create an array of partitions that need to be extracted
+PARTITIONS=(system systemex system_ext system_other vendor cust odm odm_ext oem factory 
+    product modem xrom oppo_product opproduct reserve india my_preload my_odm my_stock
+    my_operator my_country my_product my_company my_engineering my_heytap my_custom my_manifest my_carrier my_region 
+    my_bigball my_version special_preload vendor_dlkm odm_dlkm system_dlkm mi_ext radio
+)
+
+# Extract the images
+LOGI "Extracting partitions..."
+for partition in "${PARTITIONS[@]}"; do
+    # Proceed only if the image from 'PARTITIONS' array exists
+    if [[ -f "${partition}".img ]]; then
+        # Try to extract file through '7z'
+        ${FSCK_EROFS} --extract="${partition}" "${partition}".img >> /dev/null 2>&1 || {
+                # Try to extract file through '7z'
+                7z -snld x "${partition}".img -y -o"${partition}"/ > /dev/null || {
+                LOGE "'${partition}' extraction via '7z' failed."
+
+                # Only abort if we're at the first occourence
+                if [[ "${partition}" == "${PARTITIONS[0]}" ]]; then
+                    LOGF "Aborting dumping considering it's a crucial partition."
                 fi
-            fi
-        fi
+            }
+        }
+
+        # Clean-up
+        rm -f "${partition}".img
     fi
 done
+
+# Also extract 'fsg.mbn' from 'radio.img'
+if [ -f "fsg.mbn" ]; then
+    LOGI "Extracting 'fsg.mbn' via '7zz'..."
+    mkdir "radio/fsg"
+
+    # Thankfully, 'fsg.mbn' is a simple EXT2 partition
+    7zz -snld x "fsg.mbn" -o"radio/fsg" > /dev/null
+
+    # Remove 'fsg.mbn'
+    rm -rf "fsg.mbn"
+fi
 
 # Extract and decompile device-tree blobs
 for image in boot vendor_boot vendor_kernel_boot; do
@@ -272,10 +266,6 @@ if [[ -f dtbo.img ]]; then
             LOGE "Failed to decompile device-tree blobs."
     done
 fi
-
-# Fix permissions
-$sudo_cmd chown "$(whoami)" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/./* -fR
-$sudo_cmd chmod -fR u+rwX "$PROJECT_DIR"/working/"${UNZIP_DIR}"/./*
 
 # board-info.txt
 find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/modem -type f -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING=MPSS." | sed "s|QC_IMAGE_VERSION_STRING=MPSS.||g" | cut -c 4- | sed -e 's/^/require version-baseband=/' >> "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt
