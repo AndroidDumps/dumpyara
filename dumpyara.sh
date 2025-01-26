@@ -1,6 +1,29 @@
 #!/usr/bin/env bash
 
-[[ $# = 0 ]] && echo "No Input" && exit 1
+# Add logging definition to make output clearer
+## Info
+LOGI() {
+    echo -e "[\033[32mINFO\033[0m]: ${1}"
+}
+
+## Warning
+LOGW() {
+    echo -e "[\033[33mWARNING\033[0m]: ${1}"
+}
+
+## Error
+LOGE() {
+    echo -e "[\033[31mERROR\033[0m] $(basename ${0}): ${1}"
+}
+
+## Fatal
+LOGF() {
+    echo -e "[\033[41mFATAL\033[0m] $(basename ${0}): ${1}"
+    exit 1
+}
+
+[[ $# = 0 ]] && \
+    LOGF "No input provided."
 
 OS=$(uname)
 if [ "$OS" = 'Darwin' ]; then
@@ -17,7 +40,7 @@ if command -v sudo > /dev/null 2>&1; then
 elif command -v doas > /dev/null 2>&1; then
     sudo_cmd="doas"
 else
-    echo "[WARN] Neither 'sudo' nor 'doas' found; resorting to 'su'."
+    LOGW "Neither 'sudo' nor 'doas' found; resorting to 'su'."
     # Create a separated function in order to handle 'su'
     su_cmd() { 
         su -c "$*" 
@@ -34,7 +57,7 @@ if [[ -n $2 ]]; then
 elif [[ -f ".githubtoken" ]]; then
     GIT_OAUTH_TOKEN=$(< .githubtoken)
 else
-    echo "GitHub token not found. Dumping just locally..."
+    LOGW "GitHub token not found. Dumping just locally..."
 fi
 
 # download or copy from local?
@@ -66,9 +89,9 @@ if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
 
                     # Be sure that the mirror is available. Once found, break the loop 
                     if [ "$(curl -I -sS "${URL}" | head -n1 | cut -d' ' -f2)" == "404" ]; then
-                        echo "[ERROR] ${URLS} is not available. Trying with other mirror(s)..."
+                        LOGW "${URLS} is not available. Trying with other mirror(s)..."
                     else
-                        echo "[INFO] Found best available mirror."
+                        LOGI "Found best available mirror."
                         break
                     fi
                 done
@@ -76,11 +99,11 @@ if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
             ;;
             # For Pixeldrain: replace the link with a direct one
             *"pixeldrain.com/u"*)
-                echo "[INFO] Replacing with best available mirror."
+                LOGI "Replacing with best available mirror."
                 URL="https://pd.cybar.xyz/${URL##*/}"
             ;;
             *"pixeldrain.com/d"*)
-                echo "[INFO] Replacing with direct download link."
+                LOGI "Replacing with direct download link."
                 URL="https://pixeldrain.com/api/filesystem/${URL##*/}"
             ;;
         esac
@@ -105,10 +128,10 @@ UNZIP_DIR=${FILE/.$EXTENSION/}
 PARTITIONS="system systemex system_ext system_other vendor cust odm odm_ext oem factory product modem xrom oppo_product opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap my_custom my_manifest my_carrier my_region my_bigball my_version special_preload vendor_dlkm odm_dlkm system_dlkm mi_ext"
 
 if [[ -d "$1" ]]; then
-    echo 'Directory detected. Copying...'
+    LOGI 'Directory detected. Copying...'
     cp -a "$1" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
 elif [[ -f "$1" ]]; then
-    echo 'File detected. Copying...'
+    LOGI 'File detected. Copying...'
     cp -a "$1" "$PROJECT_DIR"/input/"${FILE}" > /dev/null 2>&1
 fi
 
@@ -138,7 +161,7 @@ cd "$PROJECT_DIR"/working/"${UNZIP_DIR}" || exit
 for p in $PARTITIONS; do
     # Try to extract images via fsck.erofs
     if [ -f "$p".img ] && [ "$p" != "modem" ]; then
-        echo "Trying to extract $p partition via fsck.erofs."
+        LOGI "Trying to extract $p partition via fsck.erofs."
         "$PROJECT_DIR"/Firmware_extractor/tools/fsck.erofs --extract="$p" "$p".img
         # Deletes images if they were correctly extracted via fsck.erofs
         if [ -d "$p" ]; then
@@ -147,11 +170,11 @@ for p in $PARTITIONS; do
         # Uses 7z if images could not be extracted via fsck.erofs
             if [[ -e "$p.img" ]]; then
                 mkdir "$p" 2> /dev/null || rm -rf "${p:?}"/*
-                echo "Extraction via fsck.erofs failed, extracting $p partition via 7z"
+                LOGW "Extraction via fsck.erofs failed, extracting $p partition via 7z"
                 if 7z x "$p".img -y -o"$p"/ > /dev/null 2>&1; then
                     rm "$p".img > /dev/null 2>&1
                 else
-                    echo "Couldn't extract $p partition via 7z. Using mount loop"
+                    LOGW "Couldn't extract $p partition via 7z. Using mount loop"
                     $sudo_cmd mount -o loop -t auto "$p".img "$p"
                     mkdir "${p}_"
                     $sudo_cmd cp -rf "${p}/"* "${p}_"
@@ -160,9 +183,9 @@ for p in $PARTITIONS; do
                     if $sudo_cmd rm -rf "${p}_"; then
                         rm -fv "$p".img > /dev/null 2>&1
                     else
-                        echo "Couldn't extract $p partition. It might use an unsupported filesystem."
-                        echo "For EROFS: make sure you're using Linux 5.4+ kernel."
-                        echo "For F2FS: make sure you're using Linux 5.15+ kernel."
+                        LOGE "Couldn't extract $p partition. It might use an unsupported filesystem."
+                        echo "        For EROFS: make sure you're using Linux 5.4+ kernel."
+                        echo "        For F2FS: make sure you're using Linux 5.15+ kernel."
                     fi
                 fi
             fi
@@ -177,23 +200,23 @@ for image in boot vendor_boot vendor_kernel_boot; do
         mkdir -p "${image}/dtb" "${image}/dts"
 
         # Unpack image's content
-        echo "[INFO] Extracting '${image}' content..."
+        LOGI "Extracting '${image}' content..."
         ${UNPACKBOOTIMG} -i "${image}.img" -o "${image}/" > /dev/null || \
-            echo "[ERROR] Extraction via 'unpackbootimg' unsuccessful."
+            LOGE "Extraction via 'unpackbootimg' unsuccessful."
 
         ## Retrive image's ramdisk, and extract it
         unlz4 "${image}"/"${image}".img-*ramdisk "${image}/ramdisk.lz4" >> /dev/null 2>&1
         7z -snld x "${image}/ramdisk.lz4" -o"${image}/ramdisk" >> /dev/null 2>&1  || \
-            echo "[ERROR] Failed to extract ramdisk."
+            LOGI "Failed to extract ramdisk."
 
         ## Clean-up
         rm -rf "${image}/ramdisk.lz4"
         rm -rf "${image}/${image}".img-*ramdisk
 
         # Extract 'dtb' via 'extract-dtb'
-        echo "[INFO] Trying to extract device-tree(s) from '${image}'..." 
+        LOGI "Trying to extract device-tree(s) from '${image}'..." 
         uvx -q extract-dtb "${image}.img" -o "${image}/dtb" > /dev/null || \
-            echo "[ERROR] Failed to extract device-tree blobs."
+            LOGE "Failed to extract device-tree blobs."
 
         # Remove '00_kernel'
         rm -rf "${image}/dtb/00_kernel"
@@ -201,7 +224,7 @@ for image in boot vendor_boot vendor_kernel_boot; do
         # Decompile blobs to 'dts' via 'dtc'
         for dtb in $(find "${image}/dtb" -type f); do
             dtc -q -I dtb -O dts "${dtb}" >> "${image}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')" || \
-                echo "[ERROR] Failed to decompile device-tree blobs."
+                LOGE "Failed to decompile device-tree blobs."
         done
     fi
 
@@ -214,20 +237,20 @@ done
 # Extract 'boot.img'-related content
 if [[ -f boot.img ]]; then
     # Extract 'ikconfig'
-    echo "[INFO] Extracting 'ikconfig'..."
+    LOGI "Extracting 'ikconfig'..."
     ${EXTRACT_IKCONFIG} boot.img > ikconfig || {
-        echo "[ERROR] Failed to generate 'ikconfig'"
+        LOGE "Failed to generate 'ikconfig'"
     }
 
     # Generate non-stack symbols
-    echo "[INFO] Generating 'boot.img-kallsyms'..."
+    LOGI "Generating 'boot.img-kallsyms'..."
     ${VMLINUX_TO_ELF} kallsyms-finder boot.img > boot/boot.img-kallsyms || \
-        echo "[ERROR] Failed to generate 'boot.img-kallsyms'"
+        LOGE "Failed to generate 'boot.img-kallsyms'"
 
     # Generate analyzable '.elf'
-    echo "[INFO] Extracting 'boot.img-elf'..."
+    LOGI "Extracting 'boot.img-elf'..."
     ${VMLINUX_TO_ELF} vmlinux-to-elf boot.img boot/boot.img-elf > /dev/null ||
-        echo "[ERROR] Failed to generate 'boot.img-elf'"
+        LOGE "Failed to generate 'boot.img-elf'"
 fi
 
 # Extract 'dtbo.img' separately
@@ -236,9 +259,9 @@ if [[ -f dtbo.img ]]; then
     mkdir -p "dtbo/dts"
 
     # Extract 'dtb' via 'extract-dtb'
-    echo "[INFO] Trying to extract device-tree(s) from 'dtbo'..." 
+    LOGI "Trying to extract device-tree(s) from 'dtbo'..." 
     uvx -q extract-dtb "dtbo.img" -o "dtbo/" > /dev/null || \
-        echo "[ERROR] Failed to extract device-tree blobs."
+        LOGE "Failed to extract device-tree blobs."
 
     # Remove '00_kernel'
     rm -rf "dtbo/00_kernel"
@@ -246,7 +269,7 @@ if [[ -f dtbo.img ]]; then
     # Decompile blobs to 'dts' via 'dtc'
     for dtb in $(find "dtbo" -type f -name "*.dtb"); do
         dtc -q -I dtb -O dts "${dtb}" >> "dtbo/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')" || \
-            echo "[ERROR] Failed to decompile device-tree blobs."
+            LOGE "Failed to decompile device-tree blobs."
     done
 fi
 
@@ -433,9 +456,9 @@ cat "$PROJECT_DIR"/working/"${UNZIP_DIR}"/README.md
 # Generate AOSP device tree
 mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"
 if uvx aospdtgen . --output "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"; then
-    echo "AOSP device tree successfully generated"
+    LOGI "AOSP device tree successfully generated"
 else
-    echo "Failed to generate AOSP device tree"
+    LOGE "Failed to generate AOSP device tree"
 fi
 
 # copy file names
@@ -479,7 +502,7 @@ if [[ -n $GIT_OAUTH_TOKEN ]]; then
     git add product/
     git commit -asm "Add product for ${description}" && "${GITPUSH[@]}"
 else
-    echo "Dump done locally."
+    LOGI "Dump done locally."
     exit 1
 fi
 
