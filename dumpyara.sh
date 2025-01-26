@@ -262,13 +262,24 @@ if [[ -f dtbo.img ]]; then
     done
 fi
 
-# board-info.txt
-find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/modem -type f -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING=MPSS." | sed "s|QC_IMAGE_VERSION_STRING=MPSS.||g" | cut -c 4- | sed -e 's/^/require version-baseband=/' >> "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt
-find "$PROJECT_DIR"/working/"${UNZIP_DIR}"/tz* -type f -exec strings {} \; | grep "QC_IMAGE_VERSION_STRING" | sed "s|QC_IMAGE_VERSION_STRING|require version-trustzone|g" >> "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt
-if [ -e "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor/build.prop ]; then
-    strings "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor/build.prop | grep "ro.vendor.build.date.utc" | sed "s|ro.vendor.build.date.utc|require version-vendor|g" >> "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt
+# Generate 'board-info.txt'
+LOGI "Generating 'board-info.txt'..."
+
+## Generic
+if [ -f vendor/build.prop ]; then
+    strings ./vendor/build.prop | grep "ro.vendor.build.date.utc" | sed "s|ro.vendor.build.date.utc|require version-vendor|g" >> ./board-info.txt
 fi
-sort -u -o "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt "$PROJECT_DIR"/working/"${UNZIP_DIR}"/board-info.txt
+
+## Qualcomm-specific
+if [[ $(find . -wholename "modem") ]] && [[ $(find . -wholename "*./tz*") ]]; then
+    find ./modem -type f -exec strings {} \; | rg "QC_IMAGE_VERSION_STRING=MPSS." | sed "s|QC_IMAGE_VERSION_STRING=MPSS.||g" | cut -c 4- | sed -e 's/^/require version-baseband=/' >> board-info.txt
+    find ./tz* -type f -exec strings {} \; | rg "QC_IMAGE_VERSION_STRING" | sed "s|QC_IMAGE_VERSION_STRING|require version-trustzone|g" >> board-info.txt
+fi
+
+## Sort 'board-info.txt' content
+if [ -f board-info.txt ]; then
+    sort -u -o board-info.txt board-info.txt
+fi
 
 # 'flavor' property (e.g. caiman-user)
 flavor=$(rg -m1 -INoP --no-messages "(?<=^ro.build.flavor=).*" {vendor,system,system/system}/build.prop)
@@ -444,10 +455,10 @@ LOGI "Generating dummy device tree..."
 uvx -q aospdtgen . --output "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree" >> /dev/null 2>&1 || \
     LOGE "Failed to generate AOSP device tree"
 
-# copy file names
-chown "$(whoami)" ./* -R
-chmod -R u+rwX ./* #ensure final permissions
-find "$PROJECT_DIR"/working/"${UNZIP_DIR}" -type f -printf '%P\n' | sort | grep -v ".git/" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/all_files.txt
+# Generate 'all_files.txt'
+LOGI "Generating 'all_files.txt'..."
+find . -type f ! -name all_files.txt -and ! -path "*/aosp-device-tree/*" \
+     -printf '%P\n' | sort | grep -v ".git/" > ./all_files.txt
 
 if [[ -n $GIT_OAUTH_TOKEN ]]; then
     GITPUSH=(git push https://"$GIT_OAUTH_TOKEN"@github.com/"$ORG"/"${repo,,}".git "$branch")
