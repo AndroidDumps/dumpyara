@@ -117,6 +117,11 @@ elif [[ -f "$1" ]]; then
     cp -a "$1" "$PROJECT_DIR"/input/"${FILE}" > /dev/null 2>&1
 fi
 
+# Delete previously dumped project
+if [[ -d "$PROJECT_DIR"/working/"${UNZIP_DIR}" ]]; then
+    rm -rf "$PROJECT_DIR"/working/"${UNZIP_DIR}"
+fi
+
 # clone other repo's
 if [[ -d "$PROJECT_DIR/Firmware_extractor" ]]; then
     git -C "$PROJECT_DIR"/Firmware_extractor pull --recurse-submodules --rebase
