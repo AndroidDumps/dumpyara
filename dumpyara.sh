@@ -13,12 +13,12 @@ LOGW() {
 
 ## Error
 LOGE() {
-    echo -e "[\033[31mERROR\033[0m] $(basename ${0}): ${1}"
+    echo -e "[\033[31mERROR\033[0m] $(basename "${0}"): ${1}"
 }
 
 ## Fatal
 LOGF() {
-    echo -e "[\033[41mFATAL\033[0m] $(basename ${0}): ${1}"
+    echo -e "[\033[41mFATAL\033[0m] $(basename "${0}"): ${1}"
     exit 1
 }
 
@@ -50,7 +50,7 @@ if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
             if ! echo "${URL}" | rg -q 'cdnorg|bkt-sgp-miui-ota-update-alisgp'; then
                 # Set '${URL_ORIGINAL}' and '${FILE_PATH}' in case we might need to roll back
                 URL_ORIGINAL=$(echo "${URL}" | sed -E 's|(https://[^/]+).*|\1|')
-                FILE_PATH=$(echo ${URL#*d.miui.com/} | sed 's/?.*//')
+                FILE_PATH=$(echo "${URL#*d.miui.com/}" | sed 's/?.*//')
 
                 # Array of different possible mirrors
                 MIRRORS=(
