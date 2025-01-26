@@ -25,11 +25,6 @@ LOGF() {
 [[ $# = 0 ]] && \
     LOGF "No input provided."
 
-OS=$(uname)
-if [ "$OS" = 'Darwin' ]; then
-    export LC_CTYPE=C
-fi
-
 PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 # Create input & working directory if it does not exist
 mkdir -p "$PROJECT_DIR"/input "$PROJECT_DIR"/working
@@ -127,7 +122,8 @@ else
 fi
 
 # extract rom via Firmware_extractor
-[[ ! -d "$1" ]] && bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "$PROJECT_DIR"/input/"${FILE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
+[[ ! -d "$1" ]] && \
+    bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "${1}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
 
 # Retrive 'extract-ikconfig' from torvalds/linux
 if ! [[ -f "${PROJECT_DIR}"/extract-ikconfig ]]; then
