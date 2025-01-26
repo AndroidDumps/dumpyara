@@ -112,9 +112,6 @@ UNZIP_DIR=${FILE/.$EXTENSION/}
 if [[ -d "$1" ]]; then
     LOGI 'Directory detected. Copying...'
     cp -a "$1" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
-elif [[ -f "$1" ]]; then
-    LOGI 'File detected. Copying...'
-    cp -a "$1" "$PROJECT_DIR"/input/"${FILE}" > /dev/null 2>&1
 fi
 
 # Delete previously dumped project
