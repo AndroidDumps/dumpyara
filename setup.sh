@@ -66,10 +66,6 @@ elif command -v pacman > /dev/null 2>&1; then
     done
 fi
 
-# Create virtual environment and install packages
-python3 -m venv .venv
-source .venv/bin/activate
-
 # Install 'uv' through pipx
 LOGI "Installing 'uv'..."
 curl -LsSf https://astral.sh/uv/install.sh | sh > /dev/null 2>&1 

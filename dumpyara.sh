@@ -34,9 +34,6 @@ PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 # Create input & working directory if it does not exist
 mkdir -p "$PROJECT_DIR"/input "$PROJECT_DIR"/working
 
-# Activate virtual environment
-source .venv/bin/activate
-
 # GitHub token
 if [[ -n $2 ]]; then
     GIT_OAUTH_TOKEN=$2
@@ -443,13 +440,11 @@ manufacturer=$(echo "$manufacturer" | tr '[:upper:]' '[:lower:]' | tr -dc '[:pri
 printf "# %s\n- manufacturer: %s\n- platform: %s\n- codename: %s\n- flavor: %s\n- release: %s\n- id: %s\n- incremental: %s\n- tags: %s\n- fingerprint: %s\n- is_ab: %s\n- brand: %s\n- branch: %s\n- repo: %s\n" "$description" "$manufacturer" "$platform" "$codename" "$flavor" "$release" "$id" "$incremental" "$tags" "$fingerprint" "$is_ab" "$brand" "$branch" "$repo" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/README.md
 cat "$PROJECT_DIR"/working/"${UNZIP_DIR}"/README.md
 
-# Generate AOSP device tree
+# Generate dummy device tree
 mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"
-if uvx aospdtgen . --output "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"; then
-    LOGI "AOSP device tree successfully generated"
-else
+LOGI "Generating dummy device tree..."
+uvx -q aospdtgen . --output "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree" >> /dev/null 2>&1 || \
     LOGE "Failed to generate AOSP device tree"
-fi
 
 # copy file names
 chown "$(whoami)" ./* -R
