@@ -43,7 +43,7 @@ if command -v apt > /dev/null 2>&1; then
     $sudo_cmd apt update > /dev/null 2>&1
 
     # Install required packages in form of a 'for' loop
-    for package in unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract device-tree-compiler liblzma-dev python3-pip brotli liblz4-tool axel gawk aria2 detox cpio rename liblz4-dev curl python3-venv ripgrep; do
+    for package in unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract device-tree-compiler liblzma-dev python3-pip brotli liblz4-tool axel gawk aria2 detox cpio rename liblz4-dev curl ripgrep; do
         LOGI "Installing '${package}'..."
         $sudo_cmd apt install  -y "${package}" > /dev/null 2>&1 || \
             LOGE "Failed installing '${package}'."
