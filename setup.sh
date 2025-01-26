@@ -43,7 +43,6 @@ elif command -v pacman > /dev/null 2>&1; then
             echo "[ERROR] Failed installing '${package}'."
     done
 fi
-PIP=pip3
 
 # Create virtual environment and install packages
 python3 -m venv .venv
