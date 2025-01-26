@@ -122,159 +122,16 @@ fi
 # extract rom via Firmware_extractor
 [[ ! -d "$1" ]] && bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "$PROJECT_DIR"/input/"${FILE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
 
+# Retrive 'extract-ikconfig' from torvalds/linux
+if ! [[ -f "${PROJECT_DIR}"/extract-ikconfig ]]; then
+    curl -s -Lo "${PROJECT_DIR}"/extract-ikconfig https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/scripts/extract-ikconfig
+    chmod +x "${PROJECT_DIR}"/extract-ikconfig
+fi
+
 # Set path for tools
 UNPACKBOOTIMG="${PROJECT_DIR}"/Firmware_extractor/tools/unpackbootimg
-VMLINUX_TO_ELF="uvx --from git+https://github.com/marin-m/vmlinux-to-elf@da14e789596d493f305688e221e9e34ebf63cbb8"
-
-# Extract 'boot.img'
-if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot.img ]]; then
-    # Set a variable for each path
-    ## Image
-    IMAGE=${PROJECT_DIR}/working/${UNZIP_DIR}/boot.img
-
-    ## Output(s)
-    OUTPUT=${PROJECT_DIR}/working/${UNZIP_DIR}/boot
-
-    # Create necessary directories
-    mkdir -p "${OUTPUT}/dtb"
-    mkdir -p "${OUTPUT}/dts"
-
-    # Extract 'boot.img' content(s)
-    "${UNPACKBOOTIMG}" -i "${IMAGE}" -o "${OUTPUT}" > /dev/null 2>&1
-    echo 'boot extracted'
-
-    # Extract 'dtb' and decompile then
-    uvx -q extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
-    rm -rf "${OUTPUT}/dtb/00_kernel"
-
-    ## Check whether device-tree blobs were extracted or not
-    if [ "$(find "${OUTPUT_DTB}" -name "*.dtb")" ]; then
-        for dtb in $(find "${OUTPUT_DTB}" -type f); do
-            dtc -q -I dtb -O dts "${dtb}" >> "${OUTPUT}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
-        done
-        echo 'boot (dtb, dts) extracted'
-    else
-        ## Extraction failed, device-tree resources are probably somewhere else.
-        rm -rf "${OUTPUT}/dtb" \
-               "${OUTPUT}/dts"
-    fi
-
-    # Run 'extract-ikconfig'
-    [[ ! -e "${PROJECT_DIR}"/extract-ikconfig ]] && curl https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-ikconfig > "${PROJECT_DIR}"/extract-ikconfig
-    bash "${PROJECT_DIR}"/extract-ikconfig "${IMAGE}" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/ikconfig
-
-    # Run 'vmlinux-to-elf'
-    mkdir -p "$PROJECT_DIR"/working/"${UNZIP_DIR}"/bootRE
-
-    echo "[INFO] Generating 'kallsyms.txt'..."
-    ${VMLINUX_TO_ELF} kallsyms-finder "${IMAGE}" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/boot_kallsyms.txt 2>&1 || \
-        echo "[ERROR] Failed to generate 'boot_kallsyms.txt'"
-
-    echo "[INFO] Extracting 'boot.elf'..."
-    ${VMLINUX_TO_ELF} vmlinux-to-elf "${IMAGE}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/boot/boot.elf > /dev/null 2>&1 ||
-        echo "[ERROR] Failed to generate 'boot.elf'"
-fi
-
-# Extract 'vendor_boot'
-if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_boot.img ]]; then
-    # Set a variable for each path
-    ## Image
-    IMAGE=${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_boot.img
-
-    ## Output(s)
-    OUTPUT=${PROJECT_DIR}/working/${UNZIP_DIR}/boot
-
-    # Create necessary directories
-    mkdir -p "${OUTPUT}/dtb"
-    mkdir -p "${OUTPUT}/dts"
-
-    # Extract 'vendor_boot.img' content(s)
-    "${UNPACKBOOTIMG}" -i "${IMAGE}" -o "${OUTPUT}" > /dev/null 2>&1
-    echo 'vendor_boot extracted'
-
-    # Extract 'dtb' and decompile then
-    uvx -q extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
-
-    ## Check whether device-tree blobs were extracted or not
-    if [ "$(find "${OUTPUT}/dtb" -name "*.dtb")" ]; then
-        for dtb in $(find "${OUTPUT}/dtb" -type f); do
-            dtc -q -I dtb -O dts "${dtb}" >> "${OUTPUT}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
-        done
-        echo 'vendor_boot (dtb, dts) extracted'
-    else
-        ## Extraction failed, device-tree resources are probably somewhere else.
-        rm -rf "${OUTPUT}/dtb" \
-               "${OUTPUT}/dts"
-    fi
-fi
-
-# Extract 'vendor_kernel_boot'
-if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/vendor_kernel_boot.img ]]; then
-    # Set a variable for each path
-    ## Image
-    IMAGE=${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot.img
-
-    ## Output(s)
-    OUTPUT=${PROJECT_DIR}/working/${UNZIP_DIR}/vendor_kernel_boot
-
-    # Create necessary directories
-    mkdir -p "${OUTPUT}/dtb"
-    mkdir -p "${OUTPUT}/dts"
-
-    # Extract 'vendor_boot.img' content(s)
-    "${UNPACKBOOTIMG}" -i "${IMAGE}" -o "${OUTPUT}" > /dev/null 2>&1
-    echo 'vendor_kernel_boot extracted'
-
-    # Extract 'dtb' and decompile then
-    uvx -q extract-dtb "${IMAGE}" -o "${OUTPUT}/dtb" > /dev/null
-    rm -rf "${OUTPUT}/dtb/00_kernel"
-
-    ## Check whether device-tree blobs were extracted or not
-    if [ "$(find "${OUTPUT}/dtb" -name "*.dtb")" ]; then
-        for dtb in $(find "${OUTPUT}/dtb" -type f); do
-            dtc -q -I dtb -O dts "${dtb}" >> "${OUTPUT}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
-        done
-        echo 'vendor_kernel_boot (dtb, dts) extracted'
-    else
-        # Extraction failed, device-tree resources are probably somewhere else.
-        rm -rf "${OUTPUT}/dtb" \
-               "${OUTPUT}/dts"
-    fi
-fi
-
-# Extract 'init_boot'
-if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/init_boot.img ]]; then
-    # Set a variable for each path
-    ## Image
-    IMAGE=${PROJECT_DIR}/working/${UNZIP_DIR}/init_boot.img
-
-    ## Output(s)
-    OUTPUT=${PROJECT_DIR}/working/${UNZIP_DIR}/init_boot
-
-    # Extract 'init_boot.img' content(s)
-    "${UNPACKBOOTIMG}" -i "${IMAGE}" -o "${OUTPUT}" > /dev/null 2>&1
-    echo 'init_boot extracted'
-fi
-
-if [[ -f "$PROJECT_DIR"/working/"${UNZIP_DIR}"/dtbo.img ]]; then
-    # Set a variable for each path
-    ## Image
-    IMAGE=${PROJECT_DIR}/working/${UNZIP_DIR}/dtbo.img
-
-    ## Output(s)
-    OUTPUT=${PROJECT_DIR}/working/${UNZIP_DIR}/dtbo
-
-    # Create necessary directories
-    mkdir -p "${OUTPUT}/dts"
-
-    # Extract 'dtb' and decompile them
-    uvx -q extract-dtb "${IMAGE}" -o "${OUTPUT}" > /dev/null
-    rm -rf "${OUTPUT}/00_kernel"
-    for dtb in $(find "${PROJECT_DIR}/working/${UNZIP_DIR}/dtbo" -type f -name "*.dtb"); do
-        dtc -q -I dtb -O dts "${dtb}" >> "${OUTPUT}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')"
-    done
-    echo 'dtbo extracted'
-fi
+VMLINUX_TO_ELF="uvx -q --from git+https://github.com/marin-m/vmlinux-to-elf@da14e789596d493f305688e221e9e34ebf63cbb8"
+EXTRACT_IKCONFIG="${PROJECT_DIR}"/extract-ikconfig
 
 # extract PARTITIONS
 cd "$PROJECT_DIR"/working/"${UNZIP_DIR}" || exit
@@ -312,6 +169,86 @@ for p in $PARTITIONS; do
         fi
     fi
 done
+
+# Extract and decompile device-tree blobs
+for image in boot vendor_boot vendor_kernel_boot; do
+    if [[ -f "${image}".img ]]; then
+        # Create working directories
+        mkdir -p "${image}/dtb" "${image}/dts"
+
+        # Unpack image's content
+        echo "[INFO] Extracting '${image}' content..."
+        ${UNPACKBOOTIMG} -i "${image}.img" -o "${image}/" > /dev/null || \
+            echo "[ERROR] Extraction via 'unpackbootimg' unsuccessful."
+
+        ## Retrive image's ramdisk, and extract it
+        unlz4 "${image}"/"${image}".img-*ramdisk "${image}/ramdisk.lz4" >> /dev/null 2>&1
+        7z -snld x "${image}/ramdisk.lz4" -o"${image}/ramdisk" >> /dev/null 2>&1  || \
+            echo "[ERROR] Failed to extract ramdisk."
+
+        ## Clean-up
+        rm -rf "${image}/ramdisk.lz4"
+        rm -rf "${image}/${image}".img-*ramdisk
+
+        # Extract 'dtb' via 'extract-dtb'
+        echo "[INFO] Trying to extract device-tree(s) from '${image}'..." 
+        uvx -q extract-dtb "${image}.img" -o "${image}/dtb" > /dev/null || \
+            echo "[ERROR] Failed to extract device-tree blobs."
+
+        # Remove '00_kernel'
+        rm -rf "${image}/dtb/00_kernel"
+
+        # Decompile blobs to 'dts' via 'dtc'
+        for dtb in $(find "${image}/dtb" -type f); do
+            dtc -q -I dtb -O dts "${dtb}" >> "${image}/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')" || \
+                echo "[ERROR] Failed to decompile device-tree blobs."
+        done
+    fi
+
+    # If no device-tree were extracted or decompiled, delete the directories
+    if [ ! "$(ls -A ${image}/dtb)" ]; then
+        rm -rf "${image}/dtb" "${image}/dts"
+    fi
+done
+
+# Extract 'boot.img'-related content
+if [[ -f boot.img ]]; then
+    # Extract 'ikconfig'
+    echo "[INFO] Extracting 'ikconfig'..."
+    ${EXTRACT_IKCONFIG} boot.img > ikconfig || {
+        echo "[ERROR] Failed to generate 'ikconfig'"
+    }
+
+    # Generate non-stack symbols
+    echo "[INFO] Generating 'boot.img-kallsyms'..."
+    ${VMLINUX_TO_ELF} kallsyms-finder boot.img > boot/boot.img-kallsyms || \
+        echo "[ERROR] Failed to generate 'boot.img-kallsyms'"
+
+    # Generate analyzable '.elf'
+    echo "[INFO] Extracting 'boot.img-elf'..."
+    ${VMLINUX_TO_ELF} vmlinux-to-elf boot.img boot/boot.img-elf > /dev/null ||
+        echo "[ERROR] Failed to generate 'boot.img-elf'"
+fi
+
+# Extract 'dtbo.img' separately
+if [[ -f dtbo.img ]]; then
+    # Create working directories
+    mkdir -p "dtbo/dts"
+
+    # Extract 'dtb' via 'extract-dtb'
+    echo "[INFO] Trying to extract device-tree(s) from 'dtbo'..." 
+    uvx -q extract-dtb "dtbo.img" -o "dtbo/" > /dev/null || \
+        echo "[ERROR] Failed to extract device-tree blobs."
+
+    # Remove '00_kernel'
+    rm -rf "dtbo/00_kernel"
+
+    # Decompile blobs to 'dts' via 'dtc'
+    for dtb in $(find "dtbo" -type f -name "*.dtb"); do
+        dtc -q -I dtb -O dts "${dtb}" >> "dtbo/dts/$(basename "${dtb}" | sed 's/\.dtb/.dts/')" || \
+            echo "[ERROR] Failed to decompile device-tree blobs."
+    done
+fi
 
 # Fix permissions
 $sudo_cmd chown "$(whoami)" "$PROJECT_DIR"/working/"${UNZIP_DIR}"/./* -fR
