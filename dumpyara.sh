@@ -218,7 +218,7 @@ for image in boot vendor_boot vendor_kernel_boot; do
     fi
 
     # If no device-tree were extracted or decompiled, delete the directories
-    if [ ! "$(ls -A ${image}/dtb)" ]; then
+    if ! ls -A ${image}/dtb >> /dev/null 2>&1; then
         rm -rf "${image}/dtb" "${image}/dts"
     fi
 done
