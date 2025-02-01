@@ -1,10 +1,4 @@
 .githubtoken
 .tgtoken
-.venv
-extract-dtb/
-extract-ikconfig
-Firmware_extractor/
-mkbootimg_tools/
-TWRP-device-tree-generator/
-vmlinux-to-elf/
 working/
+external/

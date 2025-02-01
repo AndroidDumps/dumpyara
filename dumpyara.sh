@@ -135,27 +135,28 @@ if [[ -d "${INPUT}" ]]; then
 fi
 
 # clone other repo's
-if [[ -d "${PWD}/Firmware_extractor" ]]; then
-    git -C "${PWD}"/Firmware_extractor pull --recurse-submodules --rebase
+if [[ -d "${PWD}/external/Firmware_extractor" ]]; then
+    git -C "${PWD}"/external/Firmware_extractor pull --recurse-submodules --rebase
 else
-    git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "${PWD}"/Firmware_extractor
+    LOGI "Cloning 'Fimrware_extractor' to 'external/'..."
+    git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "${PWD}"/external/Firmware_extractor
 fi
 
 # Extract input via 'Firmware_extractor'
 [[ ! -d "${INPUT}" ]] && \
-    bash "$PWD"/Firmware_extractor/extractor.sh "${INPUT}" "${WORKING}" || LOGF "Extraction failed. Aborting."
+    bash "$PWD"/external/Firmware_extractor/extractor.sh "${INPUT}" "${WORKING}" || LOGF "Extraction failed. Aborting."
 
 # Retrive 'extract-ikconfig' from torvalds/linux
-if ! [[ -f "${PWD}"/extract-ikconfig ]]; then
-    curl -s -Lo "${PWD}"/extract-ikconfig https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/scripts/extract-ikconfig
-    chmod +x "${PWD}"/extract-ikconfig
+if ! [[ -f "${PWD}"/external/extract-ikconfig ]]; then
+    curl -s -Lo "${PWD}"/external/extract-ikconfig https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/scripts/extract-ikconfig
+    chmod +x "${PWD}"/external/extract-ikconfig
 fi
 
 # Set path for tools
-UNPACKBOOTIMG="${PWD}"/Firmware_extractor/tools/unpackbootimg
+UNPACKBOOTIMG="${PWD}"/external/Firmware_extractor/tools/unpackbootimg
 VMLINUX_TO_ELF="uvx -q --from git+https://github.com/marin-m/vmlinux-to-elf@da14e789596d493f305688e221e9e34ebf63cbb8"
-EXTRACT_IKCONFIG="${PWD}"/extract-ikconfig
-FSCK_EROFS="${PWD}"/Firmware_extractor/tools/fsck.erofs
+EXTRACT_IKCONFIG="${PWD}"/external/extract-ikconfig
+FSCK_EROFS="${PWD}"/external/Firmware_extractor/tools/fsck.erofs
 
 # Initialize images extraction
 cd "${WORKING}" || exit
