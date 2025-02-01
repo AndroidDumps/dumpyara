@@ -27,7 +27,7 @@ LOGF() {
 
 PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 # Create input & working directory if it does not exist
-mkdir -p "$PROJECT_DIR"/input "$PROJECT_DIR"/working
+mkdir -p "${PROJECT_DIR}"/working
 
 # GitHub token
 if [[ -n $2 ]]; then
@@ -38,9 +38,10 @@ else
     LOGW "GitHub token not found. Dumping just locally..."
 fi
 
-# download or copy from local?
-if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
-    URL="$1"
+# Check whether input is a string or a file
+if echo "${1}" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
+    # Set 'URL' to appended string
+    URL="${1}"
 
     # Override '${URL}' with best possible mirror of it
     case "${URL}" in
@@ -86,27 +87,42 @@ if echo "$1" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
             ;;
         esac
     
-    # Download to the 'input/' directory
-    cd "$PROJECT_DIR"/input || exit
-    echo "${URL}"
-    { type -p aria2c > /dev/null 2>&1 && printf "Downloading File...\n" && aria2c -x16 -j"$(nproc)" "${URL}"; } || { printf "Downloading File...\n" && wget -q --content-disposition --show-progress --progress=bar:force "${URL}" || exit 1; }
+    # Download to the 'working/' directory
+    cd "${PROJECT_DIR}"/working/ || exit
+
+    # Start downloading from 'aria2c' and, if failed, 'wget'
+    LOGI "Started downloading file from link... ($(date +%R:%S))"
+    aria2c -q -s16 -x16 --check-certificate=false "${URL}" || {
+        rm -fv ./input/*
+        wget -q --no-check-certificate "${URL}" || LOGF "Failed to downlaod file. Aborting."
+    }
+
+    LOGI "Finished downloading file. ($(date +%R:%S))"
+
+    # Check for 'Content-Disposition'
     if [[ ! -f "$(echo "${URL##*/}" | inline-detox)" ]]; then
         URL=$(wget --server-response --spider "${URL}" 2>&1 | awk -F"filename=" '{print $2}')
     fi
+
+    # Sanitize final file
     detox "${URL##*/}"
+    INPUT=$(echo "${URL##*/}" | inline-detox)
 else
-    URL=$(printf "%s\n" "$1")
-    [[ -e "$URL" ]] || { echo "Invalid Input" && exit 1; }
+    # Otherwise, check if it's a file or directory
+    if [[ -e ${1} ]]; then
+        INPUT=${1}
+    else
+        LOGF "Invalid input. Aborting."
+    fi
 fi
 
 ORG=AndroidDumps #your GitHub org name
-FILE=$(echo "${URL##*/}" | inline-detox)
-EXTENSION=$(echo "${URL##*.}" | inline-detox)
-UNZIP_DIR=${FILE/.$EXTENSION/}
+EXTENSION=$(echo "${INPUT##*.}" | inline-detox)
+UNZIP_DIR=$(basename ${INPUT/.$EXTENSION/})
 
-if [[ -d "$1" ]]; then
+if [[ -d "${INPUT}" ]]; then
     LOGI 'Directory detected. Copying...'
-    cp -a "$1" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
+    cp -a "${INPUT}" "${PROJECT_DIR}"/working/"${UNZIP_DIR}"
 fi
 
 # Delete previously dumped project
@@ -121,9 +137,9 @@ else
     git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "$PROJECT_DIR"/Firmware_extractor
 fi
 
-# extract rom via Firmware_extractor
-[[ ! -d "$1" ]] && \
-    bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "${1}" "$PROJECT_DIR"/working/"${UNZIP_DIR}"
+# Extract input via 'Firmware_extractor'
+[[ ! -d "${INPUT}" ]] && \
+    bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "${INPUT}" "${PROJECT_DIR}"/working/"${UNZIP_DIR}"
 
 # Retrive 'extract-ikconfig' from torvalds/linux
 if ! [[ -f "${PROJECT_DIR}"/extract-ikconfig ]]; then

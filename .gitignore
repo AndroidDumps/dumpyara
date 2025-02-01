@@ -4,7 +4,6 @@
 extract-dtb/
 extract-ikconfig
 Firmware_extractor/
-input/
 mkbootimg_tools/
 TWRP-device-tree-generator/
 vmlinux-to-elf/
