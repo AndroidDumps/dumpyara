@@ -92,6 +92,7 @@ if echo "${1}" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
 
     # Start downloading from 'aria2c' and, if failed, 'wget'
     LOGI "Started downloading file from link... ($(date +%R:%S))"
+
     aria2c -q -s16 -x16 --check-certificate=false "${URL}" || {
         rm -fv ./input/*
         wget -q --no-check-certificate "${URL}" || LOGF "Failed to downlaod file. Aborting."
@@ -469,7 +470,7 @@ cat "$PROJECT_DIR"/working/"${UNZIP_DIR}"/README.md
 mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"
 LOGI "Generating dummy device tree..."
 uvx -q aospdtgen . --output "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree" >> /dev/null 2>&1 || \
-    LOGE "Failed to generate AOSP device tree"
+    LOGE "Failed to generate AOSP device tree" && rm -rf "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"
 
 # Generate 'all_files.txt'
 LOGI "Generating 'all_files.txt'..."
