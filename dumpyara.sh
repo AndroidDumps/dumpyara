@@ -123,14 +123,15 @@ EXTENSION=$(echo "${INPUT##*.}" | inline-detox)
 UNZIP_DIR=$(basename ${INPUT/.$EXTENSION/})
 WORKING=${PWD}/working/${UNZIP_DIR}
 
-if [[ -d "${INPUT}" ]]; then
-    LOGI 'Directory detected. Copying...'
-    cp -a "${INPUT}" "${WORKING}"
-fi
-
 # Delete previously dumped project
 if [[ -d "${WORKING}" ]]; then
     rm -rf "${WORKING}"
+fi
+
+# Copy over directory to 'WORKING'
+if [[ -d "${INPUT}" ]]; then
+    LOGI 'Directory detected. Copying...'
+    cp -a "${INPUT}" "${WORKING}"
 fi
 
 # clone other repo's
