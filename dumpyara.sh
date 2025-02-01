@@ -302,6 +302,11 @@ if [ -f board-info.txt ]; then
     sort -u -o board-info.txt board-info.txt
 fi
 
+# Generate 'all_files.txt'
+LOGI "Generating 'all_files.txt'..."
+find . -type f ! -name all_files.txt \
+     -printf '%P\n' | sort | grep -v ".git/" > ./all_files.txt
+
 # 'flavor' property (e.g. caiman-user)
 flavor=$(rg -m1 -INoP --no-messages "(?<=^ro.build.flavor=).*" {vendor,system,system/system}/build.prop)
 [[ -z ${flavor} ]] && flavor=$(rg -m1 -INoP --no-messages "(?<=^ro.vendor.build.flavor=).*" vendor/build*.prop)
@@ -460,6 +465,12 @@ description=$(rg -m1 -INoP --no-messages "(?<=^ro.build.description=).*" {system
 [[ -z ${description} ]] && description=$(rg -m1 -INoP --no-messages "(?<=^ro.system.build.description=).*" {system,system/system}/build*.prop)
 [[ -z ${description} ]] && description="$flavor $release $id $incremental $tags"
 
+# Generate dummy device tree
+mkdir -p "${WORKING}/aosp-device-tree"
+LOGI "Generating dummy device tree..."
+uvx aospdtgen . --output "${WORKING}/aosp-device-tree" >> /dev/null 2>&1 || \
+    LOGE "Failed to generate AOSP device tree" && rm -rf "${WORKING}/aosp-device-tree"
+
 is_ab=$(grep -oP "(?<=^ro.build.ab_update=).*" -hs {system,system/system,vendor}/build*.prop | head -1)
 [[ -z "${is_ab}" ]] && is_ab="false"
 branch=$(echo "$description" | tr ' ' '-')
@@ -469,17 +480,6 @@ top_codename=$(echo "$codename" | tr '[:upper:]' '[:lower:]' | tr -dc '[:print:]
 manufacturer=$(echo "$manufacturer" | tr '[:upper:]' '[:lower:]' | tr -dc '[:print:]' | tr '_' '-' | cut -c 1-35)
 printf "# %s\n- manufacturer: %s\n- platform: %s\n- codename: %s\n- flavor: %s\n- release: %s\n- id: %s\n- incremental: %s\n- tags: %s\n- fingerprint: %s\n- is_ab: %s\n- brand: %s\n- branch: %s\n- repo: %s\n" "$description" "$manufacturer" "$platform" "$codename" "$flavor" "$release" "$id" "$incremental" "$tags" "$fingerprint" "$is_ab" "$brand" "$branch" "$repo" > "${WORKING}"/README.md
 cat "${WORKING}"/README.md
-
-# Generate dummy device tree
-mkdir -p "${WORKING}/aosp-device-tree"
-LOGI "Generating dummy device tree..."
-uvx aospdtgen . --output "${WORKING}/aosp-device-tree" >> /dev/null 2>&1 || \
-    LOGE "Failed to generate AOSP device tree" && rm -rf "${WORKING}/aosp-device-tree"
-
-# Generate 'all_files.txt'
-LOGI "Generating 'all_files.txt'..."
-find . -type f ! -name all_files.txt -and ! -path "*/aosp-device-tree/*" \
-     -printf '%P\n' | sort | grep -v ".git/" > ./all_files.txt
 
 if [[ -n $GIT_OAUTH_TOKEN ]]; then
     GITPUSH=(git push https://"$GIT_OAUTH_TOKEN"@github.com/"$ORG"/"${repo,,}".git "$branch")
