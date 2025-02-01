@@ -143,7 +143,7 @@ fi
 
 # Extract input via 'Firmware_extractor'
 [[ ! -d "${INPUT}" ]] && \
-    bash "$PWD"/Firmware_extractor/extractor.sh "${INPUT}" "${WORKING}"
+    bash "$PWD"/Firmware_extractor/extractor.sh "${INPUT}" "${WORKING}" || LOGF "Extraction failed. Aborting."
 
 # Retrive 'extract-ikconfig' from torvalds/linux
 if ! [[ -f "${PWD}"/extract-ikconfig ]]; then
