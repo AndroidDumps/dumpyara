@@ -154,7 +154,7 @@ fi
 
 # Set path for tools
 UNPACKBOOTIMG="${PWD}"/external/Firmware_extractor/tools/unpackbootimg
-VMLINUX_TO_ELF="uvx -q --from git+https://github.com/marin-m/vmlinux-to-elf@da14e789596d493f305688e221e9e34ebf63cbb8"
+VMLINUX_TO_ELF="uvx -q --from git+https://github.com/marin-m/vmlinux-to-elf@master"
 EXTRACT_IKCONFIG="${PWD}"/external/extract-ikconfig
 FSCK_EROFS="${PWD}"/external/Firmware_extractor/tools/fsck.erofs
 
