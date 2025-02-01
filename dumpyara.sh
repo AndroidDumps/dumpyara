@@ -120,27 +120,28 @@ fi
 ORG=AndroidDumps #your GitHub org name
 EXTENSION=$(echo "${INPUT##*.}" | inline-detox)
 UNZIP_DIR=$(basename ${INPUT/.$EXTENSION/})
+WORKING=${PROJECT_DIR}/working/${UNZIP_DIR}
 
 if [[ -d "${INPUT}" ]]; then
     LOGI 'Directory detected. Copying...'
-    cp -a "${INPUT}" "${PROJECT_DIR}"/working/"${UNZIP_DIR}"
+    cp -a "${INPUT}" "${WORKING}"
 fi
 
 # Delete previously dumped project
-if [[ -d "$PROJECT_DIR"/working/"${UNZIP_DIR}" ]]; then
-    rm -rf "$PROJECT_DIR"/working/"${UNZIP_DIR}"
+if [[ -d "${WORKING}" ]]; then
+    rm -rf "${WORKING}"
 fi
 
 # clone other repo's
-if [[ -d "$PROJECT_DIR/Firmware_extractor" ]]; then
-    git -C "$PROJECT_DIR"/Firmware_extractor pull --recurse-submodules --rebase
+if [[ -d "${PROJECT_DIR}/Firmware_extractor" ]]; then
+    git -C "${PROJECT_DIR}"/Firmware_extractor pull --recurse-submodules --rebase
 else
-    git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "$PROJECT_DIR"/Firmware_extractor
+    git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "${PROJECT_DIR}"/Firmware_extractor
 fi
 
 # Extract input via 'Firmware_extractor'
 [[ ! -d "${INPUT}" ]] && \
-    bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "${INPUT}" "${PROJECT_DIR}"/working/"${UNZIP_DIR}"
+    bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "${INPUT}" "${WORKING}"
 
 # Retrive 'extract-ikconfig' from torvalds/linux
 if ! [[ -f "${PROJECT_DIR}"/extract-ikconfig ]]; then
@@ -155,7 +156,7 @@ EXTRACT_IKCONFIG="${PROJECT_DIR}"/extract-ikconfig
 FSCK_EROFS="${PROJECT_DIR}"/Firmware_extractor/tools/fsck.erofs
 
 # Initialize images extraction
-cd "$PROJECT_DIR"/working/"${UNZIP_DIR}" || exit
+cd "${WORKING}" || exit
 
 # Create an array of partitions that need to be extracted
 PARTITIONS=(system systemex system_ext system_other vendor cust odm odm_ext oem factory 
@@ -463,14 +464,14 @@ repo=$(echo "$brand"_"$codename"_dump | tr '[:upper:]' '[:lower:]' | tr -d '\r\n
 platform=$(echo "$platform" | tr '[:upper:]' '[:lower:]' | tr -dc '[:print:]' | tr '_' '-' | cut -c 1-35)
 top_codename=$(echo "$codename" | tr '[:upper:]' '[:lower:]' | tr -dc '[:print:]' | tr '_' '-' | cut -c 1-35)
 manufacturer=$(echo "$manufacturer" | tr '[:upper:]' '[:lower:]' | tr -dc '[:print:]' | tr '_' '-' | cut -c 1-35)
-printf "# %s\n- manufacturer: %s\n- platform: %s\n- codename: %s\n- flavor: %s\n- release: %s\n- id: %s\n- incremental: %s\n- tags: %s\n- fingerprint: %s\n- is_ab: %s\n- brand: %s\n- branch: %s\n- repo: %s\n" "$description" "$manufacturer" "$platform" "$codename" "$flavor" "$release" "$id" "$incremental" "$tags" "$fingerprint" "$is_ab" "$brand" "$branch" "$repo" > "$PROJECT_DIR"/working/"${UNZIP_DIR}"/README.md
-cat "$PROJECT_DIR"/working/"${UNZIP_DIR}"/README.md
+printf "# %s\n- manufacturer: %s\n- platform: %s\n- codename: %s\n- flavor: %s\n- release: %s\n- id: %s\n- incremental: %s\n- tags: %s\n- fingerprint: %s\n- is_ab: %s\n- brand: %s\n- branch: %s\n- repo: %s\n" "$description" "$manufacturer" "$platform" "$codename" "$flavor" "$release" "$id" "$incremental" "$tags" "$fingerprint" "$is_ab" "$brand" "$branch" "$repo" > "${WORKING}"/README.md
+cat "${WORKING}"/README.md
 
 # Generate dummy device tree
-mkdir -p "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"
+mkdir -p "${WORKING}/aosp-device-tree"
 LOGI "Generating dummy device tree..."
-uvx -q aospdtgen . --output "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree" >> /dev/null 2>&1 || \
-    LOGE "Failed to generate AOSP device tree" && rm -rf "${PROJECT_DIR}/working/${UNZIP_DIR}/aosp-device-tree"
+uvx -q aospdtgen . --output "${WORKING}/aosp-device-tree" >> /dev/null 2>&1 || \
+    LOGE "Failed to generate AOSP device tree" && rm -rf "${WORKING}/aosp-device-tree"
 
 # Generate 'all_files.txt'
 LOGI "Generating 'all_files.txt'..."
