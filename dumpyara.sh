@@ -224,7 +224,7 @@ for image in boot vendor_boot vendor_kernel_boot; do
 
         # Extract 'dtb' via 'extract-dtb'
         LOGI "Trying to extract device-tree(s) from '${image}'..." 
-        uvx -q extract-dtb "${image}.img" -o "${image}/dtb" > /dev/null || \
+        uvx extract-dtb "${image}.img" -o "${image}/dtb" >> /dev/null 2>&1 || \
             LOGE "Failed to extract device-tree blobs."
 
         # Remove '00_kernel'
@@ -253,12 +253,12 @@ if [[ -f boot.img ]]; then
 
     # Generate non-stack symbols
     LOGI "Generating 'boot.img-kallsyms'..."
-    ${VMLINUX_TO_ELF} kallsyms-finder boot.img > boot/boot.img-kallsyms || \
+    ${VMLINUX_TO_ELF} kallsyms-finder boot.img >> /dev/null 2>&1 > boot/boot.img-kallsyms || \
         LOGE "Failed to generate 'boot.img-kallsyms'"
 
     # Generate analyzable '.elf'
     LOGI "Extracting 'boot.img-elf'..."
-    ${VMLINUX_TO_ELF} vmlinux-to-elf boot.img boot/boot.img-elf > /dev/null ||
+    ${VMLINUX_TO_ELF} vmlinux-to-elf boot.img boot/boot.img-elf >> /dev/null 2>&1 > /dev/null ||
         LOGE "Failed to generate 'boot.img-elf'"
 fi
 
@@ -269,7 +269,7 @@ if [[ -f dtbo.img ]]; then
 
     # Extract 'dtb' via 'extract-dtb'
     LOGI "Trying to extract device-tree(s) from 'dtbo'..." 
-    uvx -q extract-dtb "dtbo.img" -o "dtbo/" > /dev/null || \
+    uvx extract-dtb "dtbo.img" -o "dtbo/"  >> /dev/null 2>&1 || \
         LOGE "Failed to extract device-tree blobs."
 
     # Remove '00_kernel'
@@ -472,7 +472,7 @@ cat "${WORKING}"/README.md
 # Generate dummy device tree
 mkdir -p "${WORKING}/aosp-device-tree"
 LOGI "Generating dummy device tree..."
-uvx -q aospdtgen . --output "${WORKING}/aosp-device-tree" >> /dev/null 2>&1 || \
+uvx aospdtgen . --output "${WORKING}/aosp-device-tree" >> /dev/null 2>&1 || \
     LOGE "Failed to generate AOSP device tree" && rm -rf "${WORKING}/aosp-device-tree"
 
 # Generate 'all_files.txt'
