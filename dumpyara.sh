@@ -25,9 +25,10 @@ LOGF() {
 [[ $# = 0 ]] && \
     LOGF "No input provided."
 
-PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+PWD="$(cd $(dirname ${BASH_SOURCE[0]}); pwd -P)"
+
 # Create input & working directory if it does not exist
-mkdir -p "${PROJECT_DIR}"/working
+mkdir -p "${PWD}"/working
 
 # GitHub token
 if [[ -n $2 ]]; then
@@ -88,7 +89,7 @@ if echo "${1}" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
         esac
     
     # Download to the 'working/' directory
-    cd "${PROJECT_DIR}"/working/ || exit
+    cd "${PWD}"/working/ || exit
 
     # Start downloading from 'aria2c' and, if failed, 'wget'
     LOGI "Started downloading file from link... ($(date +%R:%S))"
@@ -120,7 +121,7 @@ fi
 ORG=AndroidDumps #your GitHub org name
 EXTENSION=$(echo "${INPUT##*.}" | inline-detox)
 UNZIP_DIR=$(basename ${INPUT/.$EXTENSION/})
-WORKING=${PROJECT_DIR}/working/${UNZIP_DIR}
+WORKING=${PWD}/working/${UNZIP_DIR}
 
 if [[ -d "${INPUT}" ]]; then
     LOGI 'Directory detected. Copying...'
@@ -133,27 +134,27 @@ if [[ -d "${WORKING}" ]]; then
 fi
 
 # clone other repo's
-if [[ -d "${PROJECT_DIR}/Firmware_extractor" ]]; then
-    git -C "${PROJECT_DIR}"/Firmware_extractor pull --recurse-submodules --rebase
+if [[ -d "${PWD}/Firmware_extractor" ]]; then
+    git -C "${PWD}"/Firmware_extractor pull --recurse-submodules --rebase
 else
-    git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "${PROJECT_DIR}"/Firmware_extractor
+    git clone -q --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor "${PWD}"/Firmware_extractor
 fi
 
 # Extract input via 'Firmware_extractor'
 [[ ! -d "${INPUT}" ]] && \
-    bash "$PROJECT_DIR"/Firmware_extractor/extractor.sh "${INPUT}" "${WORKING}"
+    bash "$PWD"/Firmware_extractor/extractor.sh "${INPUT}" "${WORKING}"
 
 # Retrive 'extract-ikconfig' from torvalds/linux
-if ! [[ -f "${PROJECT_DIR}"/extract-ikconfig ]]; then
-    curl -s -Lo "${PROJECT_DIR}"/extract-ikconfig https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/scripts/extract-ikconfig
-    chmod +x "${PROJECT_DIR}"/extract-ikconfig
+if ! [[ -f "${PWD}"/extract-ikconfig ]]; then
+    curl -s -Lo "${PWD}"/extract-ikconfig https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/scripts/extract-ikconfig
+    chmod +x "${PWD}"/extract-ikconfig
 fi
 
 # Set path for tools
-UNPACKBOOTIMG="${PROJECT_DIR}"/Firmware_extractor/tools/unpackbootimg
+UNPACKBOOTIMG="${PWD}"/Firmware_extractor/tools/unpackbootimg
 VMLINUX_TO_ELF="uvx -q --from git+https://github.com/marin-m/vmlinux-to-elf@da14e789596d493f305688e221e9e34ebf63cbb8"
-EXTRACT_IKCONFIG="${PROJECT_DIR}"/extract-ikconfig
-FSCK_EROFS="${PROJECT_DIR}"/Firmware_extractor/tools/fsck.erofs
+EXTRACT_IKCONFIG="${PWD}"/extract-ikconfig
+FSCK_EROFS="${PWD}"/Firmware_extractor/tools/fsck.erofs
 
 # Initialize images extraction
 cd "${WORKING}" || exit
@@ -519,13 +520,13 @@ else
 fi
 
 # Telegram channel
-TG_TOKEN=$(< "$PROJECT_DIR"/.tgtoken)
+TG_TOKEN=$(< "$PWD"/.tgtoken)
 if [[ -n "$TG_TOKEN" ]]; then
     CHAT_ID="@android_dumps"
     commit_head=$(git log --format=format:%H | head -n 1)
     commit_link="https://github.com/$ORG/$repo/commit/$commit_head"
     echo -e "Sending telegram notification"
-    printf "<b>Brand: %s</b>" "$brand" >| "$PROJECT_DIR"/working/tg.html
+    printf "<b>Brand: %s</b>" "$brand" >| "$PWD"/working/tg.html
     {
         printf "\n<b>Device: %s</b>" "$codename"
         printf "\n<b>Version:</b> %s" "$release"
@@ -533,8 +534,8 @@ if [[ -n "$TG_TOKEN" ]]; then
         printf "\n<b>GitHub:</b>"
         printf "\n<a href=\"%s\">Commit</a>" "$commit_link"
         printf "\n<a href=\"https://github.com/%s/%s/tree/%s/\">%s</a>" "$ORG" "$repo" "$branch" "$codename"
-    } >> "$PROJECT_DIR"/working/tg.html
-    TEXT=$(< "$PROJECT_DIR"/working/tg.html)
+    } >> "$PWD"/working/tg.html
+    TEXT=$(< "$PWD"/working/tg.html)
     curl -s "https://api.telegram.org/bot${TG_TOKEN}/sendmessage" --data "text=${TEXT}&chat_id=${CHAT_ID}&parse_mode=HTML&disable_web_page_preview=True" > /dev/null
-    rm -rf "$PROJECT_DIR"/working/tg.html
+    rm -rf "$PWD"/working/tg.html
 fi
