@@ -39,6 +39,15 @@ else
     LOGW "GitHub token not found. Dumping just locally..."
 fi
 
+# GitHub organization
+if [[ -n $3 ]]; then
+    GIT_ORG=$3
+elif [[ -f ".githuborganization" ]]; then
+    GIT_ORG=$(< .githuborganization)
+else
+    LOGW "GitHub organization not found. Dumping just locally..."
+fi
+
 # Check whether input is a string or a file
 if echo "${1}" | grep -e '^\(https\?\|ftp\)://.*$' > /dev/null; then
     # Set 'URL' to appended string
@@ -115,7 +124,11 @@ else
     fi
 fi
 
-ORG=AndroidDumps #your GitHub org name
+if [ -n "${GIT_ORG}" ]; then
+    ORG=$3 #your GitHub org name
+else
+    ORG=AndroidDumps #default GitHub org name
+fi
 EXTENSION=$(echo "${INPUT##*.}" | inline-detox)
 UNZIP_DIR=$(basename ${INPUT/.$EXTENSION/})
 WORKING=${PWD}/working/${UNZIP_DIR}
