@@ -125,7 +125,7 @@ else
 fi
 
 if [ -n "${GIT_ORG}" ]; then
-    ORG=$3 #your GitHub org name
+    ORG=${GIT_ORG} #your GitHub org name
 else
     ORG=AndroidDumps #default GitHub org name
 fi
