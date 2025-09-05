@@ -218,7 +218,7 @@ fi
 for image in boot vendor_boot vendor_kernel_boot; do
     if [[ -f "${image}".img ]]; then
         # Create working directories
-        mkdir -p "${image}/dtb" "${image}/dts"
+        mkdir -p "${image}/ramdisk" "${image}/dtb" "${image}/dts"
 
         # Unpack image's content
         LOGI "Extracting '${image}' content..."
