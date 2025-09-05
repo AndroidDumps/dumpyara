@@ -218,15 +218,16 @@ fi
 for image in boot vendor_boot vendor_kernel_boot; do
     if [[ -f "${image}".img ]]; then
         # Create working directories
+        mkdir "${image}"
         mkdir -p "${image}/ramdisk" "${image}/dtb" "${image}/dts"
 
         # Unpack image's content
         LOGI "Extracting '${image}' content..."
-        ${UNPACKBOOTIMG} -i "${image}.img" -o "${image}/" > /dev/null || \
+        ${UNPACKBOOTIMG} -i "${image}.img" -o "${PWD}/${image}" > /dev/null || \
             LOGE "Extraction via 'unpackbootimg' unsuccessful."
 
         ## Retrive image's ramdisk, and extract it
-        unlz4 "${image}"/"${image}".img-*ramdisk "${image}/ramdisk.lz4" >> /dev/null 2>&1
+        unlz4 "${image}/${image}".img-*ramdisk "${image}/ramdisk.lz4" >> /dev/null 2>&1
         7zz -snld x "${image}/ramdisk.lz4" -o"${image}/ramdisk" >> /dev/null 2>&1  || \
             LOGI "Failed to extract ramdisk."
 
