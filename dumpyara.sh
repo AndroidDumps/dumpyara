@@ -227,7 +227,7 @@ for image in boot vendor_boot vendor_kernel_boot; do
 
         ## Retrive image's ramdisk, and extract it
         unlz4 "${image}"/"${image}".img-*ramdisk "${image}/ramdisk.lz4" >> /dev/null 2>&1
-        7z -snld x "${image}/ramdisk.lz4" -o"${image}/ramdisk" >> /dev/null 2>&1  || \
+        7zz -snld x "${image}/ramdisk.lz4" -o"${image}/ramdisk" >> /dev/null 2>&1  || \
             LOGI "Failed to extract ramdisk."
 
         ## Clean-up
@@ -479,7 +479,7 @@ description=$(rg -m1 -INoP --no-messages "(?<=^ro.build.description=).*" {system
 # Generate dummy device tree
 mkdir -p "${WORKING}/aosp-device-tree"
 LOGI "Generating dummy device tree..."
-uvx aospdtgen . --output "${WORKING}/aosp-device-tree" >> /dev/null 2>&1 || \
+uvx aospdtgen@1.1.1 . --output "${WORKING}/aosp-device-tree" >> /dev/null 2>&1 || \
     LOGE "Failed to generate AOSP device tree" && rm -rf "${WORKING}/aosp-device-tree"
 
 is_ab=$(grep -oP "(?<=^ro.build.ab_update=).*" -hs {system,system/system,vendor}/build*.prop | head -1)
