@@ -166,11 +166,22 @@ PARTITIONS=(system systemex system_ext system_other vendor cust odm odm_ext oem 
     product_h preas preavs preload
 )
 
+is_raw_mtk_modem_image() {
+    local image=$1
+
+    head -c 1048576 "${image}" 2>/dev/null | strings -n 5 | rg -q '^(md1rom|MOLY\.)'
+}
+
 # Extract the images
 LOGI "Extracting partitions..."
 for partition in "${PARTITIONS[@]}"; do
     # Proceed only if the image from 'PARTITIONS' array exists
     if [[ -f "${partition}".img ]]; then
+        if [[ "${partition}" == "modem" ]] && is_raw_mtk_modem_image "${partition}.img"; then
+            LOGI "Raw MediaTek 'modem.img' detected; keeping image as-is."
+            continue
+        fi
+
         # Try to extract file through '7z'
         ${FSCK_EROFS} --extract="${partition}" "${partition}".img >> /dev/null 2>&1 || {
                 # Try to extract file through '7z'
@@ -305,17 +316,40 @@ LOGI "Generating 'all_files.txt'..."
 find . -type f ! -name all_files.txt \
      -printf '%P\n' | sort | grep -v ".git/" > ./all_files.txt
 
+PROP_FILES=()
+while IFS= read -r -d '' prop_file; do
+    PROP_FILES+=("${prop_file#./}")
+done < <(find . -path './.git' -prune -o -type f \( -name 'build.prop' -o -name 'build_*.prop' -o -name '*build*.prop' \) -print0 | sort -z)
+
+prop_value() {
+    local key escaped_key value
+    ((${#PROP_FILES[@]})) || return 1
+
+    for key in "$@"; do
+        escaped_key=${key//./\\.}
+        value=$(rg -m1 -INoP --no-messages "^${escaped_key}=\\K.*" "${PROP_FILES[@]}" | head -1)
+        if [[ -n ${value} ]]; then
+            printf '%s\n' "${value}"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 # 'flavor' property (e.g. caiman-user)
 flavor=$(rg -m1 -INoP --no-messages "(?<=^ro.build.flavor=).*" {vendor,system,system/system}/build.prop)
 [[ -z ${flavor} ]] && flavor=$(rg -m1 -INoP --no-messages "(?<=^ro.vendor.build.flavor=).*" vendor/build*.prop)
 [[ -z ${flavor} ]] && flavor=$(rg -m1 -INoP --no-messages "(?<=^ro.build.flavor=).*" {vendor,system,system/system}/build*.prop)
 [[ -z ${flavor} ]] && flavor=$(rg -m1 -INoP --no-messages "(?<=^ro.system.build.flavor=).*" {system,system/system}/build*.prop)
 [[ -z ${flavor} ]] && flavor=$(rg -m1 -INoP --no-messages "(?<=^ro.build.type=).*" {system,system/system}/build*.prop)
+[[ -z ${flavor} ]] && flavor=$(prop_value ro.build.flavor ro.vendor.build.flavor ro.system.build.flavor ro.build.type)
 
 # 'release' property (e.g. 15)
 release=$(rg -m1 -INoP --no-messages "(?<=^ro.build.version.release=).*" {my_manifest,vendor,system,system/system}/build*.prop)
 [[ -z ${release} ]] && release=$(rg -m1 -INoP --no-messages "(?<=^ro.vendor.build.version.release=).*" vendor/build*.prop)
 [[ -z ${release} ]] && release=$(rg -m1 -INoP --no-messages "(?<=^ro.system.build.version.release=).*" {system,system/system}/build*.prop)
+[[ -z ${release} ]] && release=$(prop_value ro.build.version.release ro.vendor.build.version.release ro.system.build.version.release)
 release=$(echo "$release" | head -1)
 
 # 'id' property (e.g. AP4A.241205.013)
@@ -325,6 +359,7 @@ id=$(rg -m1 -INoP --no-messages "(?<=^ro.build.id=).*" my_manifest/build*.prop)
 [[ -z ${id} ]] && id=$(rg -m1 -INoP --no-messages "(?<=^ro.build.id=).*" {vendor,system,system/system}/build*.prop)
 [[ -z ${id} ]] && id=$(rg -m1 -INoP --no-messages "(?<=^ro.vendor.build.id=).*" vendor/build*.prop)
 [[ -z ${id} ]] && id=$(rg -m1 -INoP --no-messages "(?<=^ro.system.build.id=).*" {system,system/system}/build*.prop)
+[[ -z ${id} ]] && id=$(prop_value ro.build.id ro.vendor.build.id ro.system.build.id)
 id=$(echo "$id" | head -1)
 
 # 'incremental' property (e.g. 12621605)
@@ -339,18 +374,21 @@ incremental=$(rg -m1 -INoP --no-messages "(?<=^ro.build.version.incremental=).*"
 [[ -z ${incremental} ]] && incremental=$(rg -m1 -INoP --no-messages "(?<=^ro.build.version.incremental=).*" my_product/build*.prop)
 [[ -z ${incremental} ]] && incremental=$(rg -m1 -INoP --no-messages "(?<=^ro.system.build.version.incremental=).*" my_product/build*.prop)
 [[ -z ${incremental} ]] && incremental=$(rg -m1 -INoP --no-messages "(?<=^ro.vendor.build.version.incremental=).*" my_product/build*.prop)
+[[ -z ${incremental} ]] && incremental=$(prop_value ro.build.version.incremental ro.vendor.build.version.incremental ro.system.build.version.incremental)
 incremental=$(echo "$incremental" | head -1)
 
 # 'tags' property (e.g. release-keys)
 tags=$(rg -m1 -INoP --no-messages "(?<=^ro.build.tags=).*" {vendor,system,system/system}/build*.prop)
 [[ -z ${tags} ]] && tags=$(rg -m1 -INoP --no-messages "(?<=^ro.vendor.build.tags=).*" vendor/build*.prop)
 [[ -z ${tags} ]] && tags=$(rg -m1 -INoP --no-messages "(?<=^ro.system.build.tags=).*" {system,system/system}/build*.prop)
+[[ -z ${tags} ]] && tags=$(prop_value ro.build.tags ro.vendor.build.tags ro.system.build.tags)
 tags=$(echo "$tags" | head -1)
 
 # 'platform' property (e.g. zumapro)
 platform=$(rg -m1 -INoP --no-messages "(?<=^ro.board.platform=).*" {vendor,system,system/system}/build*.prop | head -1)
 [[ -z ${platform} ]] && platform=$(rg -m1 -INoP --no-messages "(?<=^ro.vendor.board.platform=).*" vendor/build*.prop)
-[[ -z ${platform} ]] && platform=$(rg -m1 -INoP --no-messages rg"(?<=^ro.system.board.platform=).*" {system,system/system}/build*.prop)
+[[ -z ${platform} ]] && platform=$(rg -m1 -INoP --no-messages "(?<=^ro.system.board.platform=).*" {system,system/system}/build*.prop)
+[[ -z ${platform} ]] && platform=$(prop_value ro.board.platform ro.vendor.board.platform ro.system.board.platform)
 platform=$(echo "$platform" | head -1)
 
 # 'manufacturer' property (e.g. google)
@@ -378,6 +416,7 @@ manufacturer=$(rg -m1 -INoP --no-messages "(?<=^ro.product.odm.manufacturer=).*"
 [[ -z ${manufacturer} ]] && manufacturer=$(rg -m1 -INoP --no-messages "(?<=^ro.product.manufacturer=).*" vendor/euclid/*/build.prop)
 [[ -z ${manufacturer} ]] && manufacturer=$(rg -m1 -INoP --no-messages "(?<=^ro.system.product.manufacturer=).*" vendor/euclid/*/build.prop)
 [[ -z ${manufacturer} ]] && manufacturer=$(rg -m1 -INoP --no-messages "(?<=^ro.product.product.manufacturer=).*" vendor/euclid/product/build*.prop)
+[[ -z ${manufacturer} ]] && manufacturer=$(prop_value ro.product.manufacturer ro.product.vendor.manufacturer ro.vendor.product.manufacturer ro.product.system.manufacturer ro.system.product.manufacturer ro.product.product.manufacturer ro.product.odm.manufacturer)
 manufacturer=$(echo "$manufacturer" | head -1)
 
 # 'fingerprint' property (e.g. google/caiman/caiman:15/AP4A.241205.013/12621605:user/release-keys)
@@ -396,6 +435,7 @@ fingerprint=$(rg -m1 -INoP --no-messages "(?<=^ro.odm.build.fingerprint=).*" odm
 [[ -z ${fingerprint} ]] && fingerprint=$(rg -m1 -INoP --no-messages "(?<=^ro.build.fingerprint=).*" my_product/build.prop)
 [[ -z ${fingerprint} ]] && fingerprint=$(rg -m1 -INoP --no-messages "(?<=^ro.system.build.fingerprint=).*" my_product/build.prop)
 [[ -z ${fingerprint} ]] && fingerprint=$(rg -m1 -INoP --no-messages "(?<=^ro.vendor.build.fingerprint=).*" my_product/build.prop)
+[[ -z ${fingerprint} ]] && fingerprint=$(prop_value ro.build.fingerprint ro.system.build.fingerprint ro.vendor.build.fingerprint ro.product.build.fingerprint ro.odm.build.fingerprint)
 fingerprint=$(echo "$fingerprint" | head -1)
 
 # 'codename' property (e.g. caiman)
@@ -425,6 +465,7 @@ codename=$(rg -m1 -INoP --no-messages "(?<=^ro.product.odm.device=).*" odm/etc/b
 [[ -z ${codename} ]] && codename=$(rg -m1 -INoP --no-messages "(?<=^ro.product.vendor.device=).*" my_product/build*.prop)
 [[ -z ${codename} ]] && codename=$(rg -m1 -INoP --no-messages "(?<=^ro.build.fota.version=).*" {system,system/system}/build*.prop | cut -d - -f1 | head -1)
 [[ -z ${codename} ]] && codename=$(rg -m1 -INoP --no-messages "(?<=^ro.build.product=).*" {vendor,system,system/system}/build*.prop | head -1)
+[[ -z ${codename} ]] && codename=$(prop_value ro.product.device ro.product.vendor.device ro.vendor.product.device ro.product.system.device ro.product.product.device ro.product.odm.device ro.build.product)
 [[ -z ${codename} ]] && codename=$(echo "$fingerprint" | cut -d / -f3 | cut -d : -f1)
 
 # 'brand' property (e.g. google)
@@ -450,6 +491,7 @@ brand=$(rg -m1 -INoP --no-messages "(?<=^ro.product.odm.brand=).*" odm/etc/"${co
 [[ -z ${brand} ]] && brand=$(rg -m1 -INoP --no-messages "(?<=^ro.product.odm.brand=).*" vendor/euclid/my_manifest/build.prop)
 [[ -z ${brand} ]] && brand=$(rg -m1 -INoP --no-messages "(?<=^ro.product.odm.brand=).*" vendor/odm/etc/build*.prop)
 [[ -z ${brand} ]] && brand=$(rg -m1 -INoP --no-messages "(?<=^ro.product.brand=).*" {oppo_product,my_product}/build*.prop | head -1)
+[[ -z ${brand} ]] && brand=$(prop_value ro.product.brand ro.product.vendor.brand ro.vendor.product.brand ro.product.system.brand ro.product.product.brand ro.product.odm.brand)
 [[ -z ${brand} ]] && brand=$(echo "$fingerprint" | cut -d / -f1)
 [[ -z ${brand} ]] && brand="$manufacturer"
 
@@ -461,6 +503,7 @@ description=$(rg -m1 -INoP --no-messages "(?<=^ro.build.description=).*" {system
 [[ -z ${description} ]] && description=$(rg -m1 -INoP --no-messages "(?<=^ro.product.build.description=).*" product/build.prop)
 [[ -z ${description} ]] && description=$(rg -m1 -INoP --no-messages "(?<=^ro.product.build.description=).*" product/build*.prop)
 [[ -z ${description} ]] && description=$(rg -m1 -INoP --no-messages "(?<=^ro.system.build.description=).*" {system,system/system}/build*.prop)
+[[ -z ${description} ]] && description=$(prop_value ro.build.description ro.system.build.description ro.vendor.build.description ro.product.build.description)
 [[ -z ${description} ]] && description="$flavor $release $id $incremental $tags"
 
 # Generate dummy device tree
@@ -470,6 +513,7 @@ uvx aospdtgen . --output "${WORKING}/aosp-device-tree" >> /dev/null 2>&1 || \
     LOGE "Failed to generate AOSP device tree" && rm -rf "${WORKING}/aosp-device-tree"
 
 is_ab=$(grep -oP "(?<=^ro.build.ab_update=).*" -hs {system,system/system,vendor}/build*.prop | head -1)
+[[ -z "${is_ab}" ]] && is_ab=$(prop_value ro.build.ab_update)
 [[ -z "${is_ab}" ]] && is_ab="false"
 branch=$(echo "$description" | tr ' ' '-')
 repo=$(echo "$brand"_"$codename"_dump | tr '[:upper:]' '[:lower:]' | tr -d '\r\n')
