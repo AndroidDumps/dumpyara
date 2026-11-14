@@ -115,6 +115,26 @@ else
     fi
 fi
 
+# '7z' only exposes the inner '.tar' of a gzip-compressed tar and truncates
+# streams larger than 4 GiB (gzip's ISIZE field is 32-bit), so decompress
+# '.tgz'/'.tar.gz' inputs ourselves and let 'Firmware_extractor' handle the '.tar'.
+DECOMPRESSED_TAR=""
+if [[ -f ${INPUT} && ( ${INPUT} == *.tgz || ${INPUT} == *.tar.gz ) ]]; then
+    LOGI "Decompressing gzip-compressed tar..."
+    DECOMPRESSED_TAR_NAME="$(basename "${INPUT}")"
+    if [[ ${DECOMPRESSED_TAR_NAME} == *.tar.gz ]]; then
+        DECOMPRESSED_TAR_NAME=${DECOMPRESSED_TAR_NAME%.gz}
+    else
+        DECOMPRESSED_TAR_NAME=${DECOMPRESSED_TAR_NAME%.tgz}.tar
+    fi
+    DECOMPRESSED_TAR="${PWD}/working/${DECOMPRESSED_TAR_NAME}"
+    # Always remove the (potentially large) temporary tarball, even on failure
+    trap 'rm -f "${DECOMPRESSED_TAR}"' EXIT
+    gzip -dc "${INPUT}" > "${DECOMPRESSED_TAR}" || \
+        LOGF "Failed to decompress '${INPUT}'. Aborting."
+    INPUT="${DECOMPRESSED_TAR}"
+fi
+
 ORG=AndroidDumps #your GitHub org name
 EXTENSION=$(echo "${INPUT##*.}" | inline-detox)
 UNZIP_DIR=$(basename ${INPUT/.$EXTENSION/})
